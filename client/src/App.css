@@ -329,7 +329,7 @@ body {
 .track-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 1rem;
+    /* margin-top: 1rem; */
     table-layout: fixed;
 }
 .track-table th, .track-table td {
@@ -387,6 +387,24 @@ body {
     padding: 0;
     margin-bottom: 1rem;
 }
+.collapsible-header h5 {
+    margin: 0;
+    flex-grow: 1;
+    /* font-style: italic; */
+    color: var(--text-secondary-color);
+    font-weight: bold;
+    font-size: 1rem;
+}
+.disc-section {
+  padding-top: 1.1rem
+}
+/* .disc-header {
+    color: var(--text-secondary-color);
+    margin: 1.5rem 0 0.5rem 0;
+    font-weight: bold;
+    font-size: 1rem;
+} */
+
 
 @media (max-width: 650px) {
   .add-directory-controls {

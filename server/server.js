@@ -13,6 +13,32 @@ app.use(express.json());
 
 const allowedExtensions = ['.mp3', '.flac', '.m4a', '.opus'];
 
+const getTracksInDir = async (directoryPath) => {
+    const direntsInDir = await fs.readdir(directoryPath, { withFileTypes: true });
+    const trackDirents = direntsInDir.filter(d => d.isFile() && allowedExtensions.includes(path.extname(d.name).toLowerCase()));
+    
+    const trackPromises = trackDirents.map(async (trackDirent) => {
+        const trackPath = path.join(directoryPath, trackDirent.name);
+        try {
+            const metadata = await mm.parseFile(trackPath);
+            const { bitrate, sampleRate } = metadata.format;
+            return {
+                name: path.parse(trackDirent.name).name,
+                extension: path.extname(trackDirent.name),
+                path: trackPath,
+                bitrate: bitrate ? `${Math.round(bitrate / 1000)} kbps` : 'N/A',
+                bitDepth: metadata.format.bitsPerSample ? `${metadata.format.bitsPerSample}-bit` : 'N/A',
+                sampleRate: sampleRate ? `${sampleRate / 1000} kHz` : 'N/A'
+            };
+        } catch (err) {
+            console.error(`Could not read metadata for ${trackPath}:`, err.message);
+            return null;
+        }
+    });
+
+    return (await Promise.all(trackPromises)).filter(Boolean);
+};
+
 async function scanDirectory(musicPath) {
     console.log(`Scanning directory: ${musicPath}`);
     const library = [];
@@ -30,34 +56,26 @@ async function scanDirectory(musicPath) {
                 await Promise.all(albums.map(async (albumDirent) => {
                     if (albumDirent.isDirectory()) {
                         const albumPath = path.join(artistPath, albumDirent.name);
-                        const album = { title: albumDirent.name, path: albumPath, tracks: [] };
+                        const album = { title: albumDirent.name, path: albumPath, discs: [] };
 
-                        const direntsInAlbum = await fs.readdir(albumPath, { withFileTypes: true });
-                        const trackDirents = direntsInAlbum.filter(d => d.isFile() && allowedExtensions.includes(path.extname(d.name).toLowerCase()));
+                        const albumContents = await fs.readdir(albumPath, { withFileTypes: true });
+
+                        const tracksInRoot = await getTracksInDir(albumPath);
+                        if (tracksInRoot.length > 0) {
+                            // If tracks are in the root, treat the album itself as a "disc"
+                            album.discs.push({ name: album.title, path: album.path, isRoot: true, tracks: tracksInRoot });
+                        }
                         
-                        const trackPromises = trackDirents.map(async (trackDirent) => {
-                            const trackPath = path.join(albumPath, trackDirent.name);
-                            try {
-                                const metadata = await mm.parseFile(trackPath);
-                                const { bitrate, sampleRate } = metadata.format;
-                                return {
-                                    name: path.parse(trackDirent.name).name,
-                                    extension: path.extname(trackDirent.name),
-                                    path: trackPath,
-                                    bitrate: bitrate ? `${Math.round(bitrate / 1000)} kbps` : 'N/A',
-                                    bitDepth: metadata.format.bitsPerSample ? `${metadata.format.bitsPerSample}-bit` : 'N/A',
-                                    sampleRate: sampleRate ? `${sampleRate / 1000} kHz` : 'N/A'
-                                };
-                            } catch (err) {
-                                console.error(`Could not read metadata for ${trackPath}:`, err.message);
-                                return null;
+                        const discFolders = albumContents.filter(d => d.isDirectory());
+                        for (const discFolder of discFolders) {
+                            const discPath = path.join(albumPath, discFolder.name);
+                            const tracksInDisc = await getTracksInDir(discPath);
+                            if (tracksInDisc.length > 0) {
+                                album.discs.push({ name: discFolder.name, path: discPath, isRoot: false, tracks: tracksInDisc });
                             }
-                        });
-                        
-                        const tracksWithMetadata = (await Promise.all(trackPromises)).filter(Boolean);
-                        album.tracks = tracksWithMetadata;
+                        }
 
-                        if (album.tracks.length > 0) {
+                        if (album.discs.length > 0) {
                             artist.albums.push(album);
                         }
                     }
