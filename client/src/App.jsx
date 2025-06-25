@@ -1,53 +1,46 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './App.css';
-import FileBrowserModal from './components/FileBrowserModal';
-import Artist from './components/Artist';
-import { FolderIcon, PlusIcon, TrashIcon } from './components/Icons';
+
+import Sidebar from './components/Sidebar';
+import LibraryPage from './pages/LibraryPage';
+import SettingsPage from './pages/SettingsPage';
 
 function App() {
-  const [pathInput, setPathInput] = useState('');
+  const [currentPage, setCurrentPage] = useState('library');
   const [directories, setDirectories] = useState([]);
-  const [isBrowserOpen, setIsBrowserOpen] = useState(false);
 
+  // Load directories from localStorage on initial mount
   useEffect(() => {
     try {
         const savedDirectories = localStorage.getItem('musicDirectories');
         if (savedDirectories) {
-            const directoriesWithResetState = JSON.parse(savedDirectories).map(dir => ({
-                ...dir,
-                isLoading: false,
-                error: null,
-            }));
-            setDirectories(directoriesWithResetState);
+            const dirs = JSON.parse(savedDirectories).map(dir => ({...dir, isLoading: false, error: null}));
+            setDirectories(dirs);
         }
     } catch (error) {
-        console.error("Failed to parse directories from localStorage", error);
-        setDirectories([]);
+        console.error("Failed to parse from localStorage", error);
     }
   }, []);
 
+  // Save directories to localStorage whenever they change
   useEffect(() => {
     if (directories.length > 0) {
         localStorage.setItem('musicDirectories', JSON.stringify(directories));
     } else {
         const saved = localStorage.getItem('musicDirectories');
-        if(saved) {
-             localStorage.removeItem('musicDirectories');
-        }
+        if(saved) localStorage.removeItem('musicDirectories');
     }
   }, [directories]);
 
-  const handleAddDirectory = () => {
+  const handleAddDirectory = (pathInput) => {
     if (pathInput && !directories.some(dir => dir.path === pathInput)) {
       setDirectories([...directories, { id: Date.now(), path: pathInput, library: [], isLoading: false, error: null }]);
-      setPathInput('');
     }
   };
 
   const handleRemoveDirectory = (id) => {
-      const newDirectories = directories.filter(dir => dir.id !== id);
-      setDirectories(newDirectories);
+      setDirectories(directories.filter(dir => dir.id !== id));
   };
   
   const handleScan = async (id) => {
@@ -63,74 +56,30 @@ function App() {
     }
   };
 
+  // Scans all directories. Used to refresh the library after a rename.
+  const handleScanAll = async () => {
+    for (const dir of directories) {
+        await handleScan(dir.id);
+    }
+  };
+
   return (
-    <div className="App">
-        {isBrowserOpen && <FileBrowserModal onSelect={(path) => setPathInput(path)} onClose={() => setIsBrowserOpen(false)} />}
-      
-        <header className="App-header">
-            <h1>Settings</h1>
-            <h2>Library</h2>
-        </header>
-
-        <div className="add-directory-controls">
-            <input
-                type="text"
-                value={pathInput}
-                onChange={(e) => setPathInput(e.target.value)}
-                placeholder="Type or browse for a directory..."
-            />
-            <button 
-                className="button button-secondary button-icon" 
-                title="Browse file system" 
-                onClick={() => setIsBrowserOpen(true)}>
-                <FolderIcon />
-            </button>
-            <button 
-                className="button button-primary button-icon"
-                title="Add Directory"
-                onClick={handleAddDirectory} 
-                disabled={!pathInput}>
-                <PlusIcon />
-            </button>
-        </div>
-
-        <div className="directory-list-container">
-            {directories.map(dir => (
-                <div key={dir.id} className="directory-item">
-                    <div className="directory-header">
-                        <span className="directory-path">{dir.path}</span>
-                        <div className="directory-actions">
-                            <button 
-                                className="button button-secondary button-icon" 
-                                title="Remove Directory"
-                                onClick={() => handleRemoveDirectory(dir.id)} 
-                                disabled={dir.isLoading}>
-                                <TrashIcon />
-                            </button>
-                            <button 
-                                className="button button-primary" 
-                                onClick={() => handleScan(dir.id)} 
-                                disabled={dir.isLoading}>
-                                {dir.isLoading ? 'Scanning...' : 'Scan'}
-                            </button>
-                        </div>
-                    </div>
-                    {dir.error && <div className="error-message">{dir.error}</div>}
-                    {dir.library?.length > 0 && (
-                        <div className="library-display">
-                            {dir.library.map((artist, i) => (
-                                <Artist 
-                                    key={i} 
-                                    artist={artist} 
-                                    directoryPath={dir.path} 
-                                    onRenameSuccess={() => handleScan(dir.id)}
-                                />
-                            ))}
-                        </div>
-                    )}
-                </div>
-            ))}
-        </div>
+    <div className="main-layout">
+        <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
+        <main className="main-content">
+            {currentPage === 'library' && 
+                <LibraryPage 
+                    directories={directories} 
+                    handleScanAll={handleScanAll}
+                />}
+            {currentPage === 'settings' && 
+                <SettingsPage 
+                    directories={directories}
+                    handleAddDirectory={handleAddDirectory}
+                    handleRemoveDirectory={handleRemoveDirectory}
+                    handleScan={handleScan}
+                />}
+        </main>
     </div>
   );
 }

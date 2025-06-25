@@ -1,7 +1,7 @@
 :root {
   --background-color: #121212;
   --surface-color: #1e1e1e;
-  --primary-color: #1DB954; /* Spotify Green */
+  --primary-color: #1DB954;
   --text-color: #ffffff;
   --text-secondary-color: #b3b3b3;
   --border-color: #2c2c2c;
@@ -18,28 +18,69 @@ body {
   background-color: var(--background-color);
   color: var(--text-color);
 }
-.App {
-  text-align: center;
+/* --- Simplified Main Layout --- */
+.main-layout {
+  display: flex;
+  min-height: 100vh;
+}
+.sidebar {
+  width: 200px; /* You mentioned 232px, feel free to adjust this value */
+  background-color: #000;
+  padding: 1rem;
+  flex-shrink: 0; /* Prevents sidebar from shrinking */
+}
+.main-content {
+  flex-grow: 1; /* This is the key: makes the main area take all remaining space */
   padding: 2rem;
-  margin: auto;
+  overflow-y: auto; /* Adds a scrollbar if content is too tall */
 }
-.App-header {
+/* --- End Simplified Main Layout --- */
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.sidebar-button {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  color: var(--text-secondary-color);
+  text-align: left;
+  font-size: 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+.sidebar-button:hover {
+  background-color: var(--surface-color);
+  color: var(--text-color);
+}
+.sidebar-button.active {
+  background-color: var(--primary-color);
+  color: white;
+  font-weight: bold;
+}
+.page-header {
+  text-align: left;
   margin-bottom: 2rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 1rem;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
 }
-.App-header h1 {
-  font-size: 2.5rem;
-  color: var(--primary-color);
-  margin-bottom: 0.5rem;
+.page-header h1 {
+  margin: 0 0 0.5rem 0;
 }
-.App-header p {
+.page-header p {
+  margin: 0;
   color: var(--text-secondary-color);
 }
 .add-directory-controls {
-  background-color: var(--surface-color);
   padding: 1.5rem;
   border-radius: 12px;
   margin-bottom: 2rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   display: flex;
   gap: 0.5rem;
   max-width: 900px;
@@ -99,6 +140,14 @@ body {
     width: 20px;
     height: 20px;
 }
+.button-edit {
+    padding: 0.3rem;
+    background-color: var(--button-secondary-bg);
+}
+.button-edit svg {
+    width: 12px;
+    height: 12px;
+}
 .directory-item {
   background-color: var(--surface-color);
   border-radius: 12px;
@@ -136,14 +185,15 @@ body {
 .library-display {
   text-align: left;
   margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border-color);
 }
 .artist-card {
   padding: 1.5rem;
   border-radius: 12px;
   margin-top: 1rem;
   border: 1px solid var(--border-color);
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
 }
 .album-section {
   margin-left: 1rem;
@@ -256,34 +306,37 @@ body {
     justify-content: flex-end;
     gap: 0.5rem;
 }
-
 .inline-edit-form {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
 }
 .inline-edit-form input {
-  flex-grow: 1;
-  padding: 0.5rem;
-  font-size: 1rem;
-  background-color: #3a3a3a;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  color: var(--text-color);
+    flex-grow: 1;
+    padding: 0.5rem;
+    font-size: 1rem;
+    background-color: #3a3a3a;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-color);
 }
 .inline-edit-form .button {
-  padding: 0.5rem;
+    padding: 0.5rem;
+}
+.track-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.25rem 0;
 }
 
-.button-edit {
-  padding: 0.3rem;
-  background-color: var(--button-secondary-bg);
+.track-item .button-edit {
+    visibility: hidden;
 }
 
-.button-edit svg {
-  width: 12px;
-  height: 12px;
+.track-item:hover .button-edit {
+    visibility: visible;
 }
 
 @media (max-width: 650px) {

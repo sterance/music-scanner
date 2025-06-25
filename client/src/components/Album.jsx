@@ -1,29 +1,47 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { ChevronRightIcon, EditIcon } from './Icons';
+import Track from './Track';
 
-function Album({ album, artistPath, onRenameSuccess }) {
+function Album({ album, onRenameSuccess }) {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [newName, setNewName] = useState(album.title);
 
     const handleRename = async (e) => {
         e.preventDefault();
+        if (!onRenameSuccess) return;
+
         if (newName === album.title || !newName) {
             setIsEditing(false);
             return;
         }
 
+        const payload = { oldPath: album.path, newName };
+        console.log('Rename album payload:', payload);
+
         try {
-            const oldPath = `${artistPath}/${album.title}`;
-            await axios.post('http://localhost:3001/api/rename', { oldPath, newName });
+            await axios.post('http://localhost:3001/api/rename', payload);
             setIsEditing(false);
             onRenameSuccess();
         } catch (error) {
-            console.error("Failed to rename album:", error);
-            alert("Failed to rename album. Check console for details.");
+            const errorMsg = error.response?.data?.error || 'An unknown error occurred.';
+            console.error("Failed to rename album:", errorMsg);
+            alert(`Failed to rename album: ${errorMsg}`);
             setIsEditing(false);
             setNewName(album.title);
+        }
+    };
+
+    const handleCancel = (e) => {
+        e?.stopPropagation();
+        setIsEditing(false);
+        setNewName(album.title);
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+            handleCancel();
         }
     };
 
@@ -38,10 +56,11 @@ function Album({ album, artistPath, onRenameSuccess }) {
                             type="text"
                             value={newName}
                             onChange={(e) => setNewName(e.target.value)}
+                            onKeyDown={handleKeyDown}
                             autoFocus
                             onClick={(e) => e.stopPropagation()} 
                         />
-                        <button type="button" className="button button-secondary" onClick={(e) => {e.stopPropagation(); setIsEditing(false);}}>Cancel</button>
+                        <button type="button" className="button button-secondary" onClick={handleCancel}>Cancel</button>
                         <button type="submit" className="button button-primary">Save</button>
                     </form>
                 ) : (
@@ -52,7 +71,10 @@ function Album({ album, artistPath, onRenameSuccess }) {
                     <button 
                         className="button button-edit" 
                         title="Rename Album" 
-                        onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}>
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setIsEditing(true);
+                        }}>
                         <EditIcon />
                     </button>
                 )}
@@ -62,7 +84,11 @@ function Album({ album, artistPath, onRenameSuccess }) {
                 <div className="collapsible-content">
                     <ul>
                         {album.tracks.map((track, index) => (
-                            <li key={index}>{track}</li>
+                            <Track 
+                                key={index} 
+                                track={track}
+                                onRenameSuccess={onRenameSuccess} 
+                            />
                         ))}
                     </ul>
                 </div>

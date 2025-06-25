@@ -16,39 +16,40 @@ const allowedExtensions = ['.mp3', '.flac', '.alac', '.opus'];
 async function scanDirectory(musicPath) {
     console.log(`Scanning directory: ${musicPath}`);
     const library = [];
-
     try {
-        // Check if the provided path exists and is a directory
         const stats = await fs.stat(musicPath);
-        if (!stats.isDirectory()) {
-            throw new Error('Provided path is not a directory.');
-        }
+        if (!stats.isDirectory()) throw new Error('Provided path is not a directory.');
 
         const artists = await fs.readdir(musicPath, { withFileTypes: true });
-
-        // Using Promise.all to process all artists in parallel
         await Promise.all(artists.map(async (artistDirent) => {
             if (artistDirent.isDirectory()) {
-                const artistName = artistDirent.name;
-                const artistPath = path.join(musicPath, artistName);
-                const artist = { name: artistName, albums: [] };
+                const artistPath = path.join(musicPath, artistDirent.name);
+                const artist = { 
+                    name: artistDirent.name, 
+                    path: artistPath, 
+                    albums: [] 
+                };
 
                 const albums = await fs.readdir(artistPath, { withFileTypes: true });
                 await Promise.all(albums.map(async (albumDirent) => {
                     if (albumDirent.isDirectory()) {
-                        const albumTitle = albumDirent.name;
-                        const albumPath = path.join(artistPath, albumTitle);
-                        const album = { title: albumTitle, tracks: [] };
+                        const albumPath = path.join(artistPath, albumDirent.name);
+                        const album = { 
+                            title: albumDirent.name, 
+                            path: albumPath, 
+                            tracks: [] 
+                        };
 
                         const allDirentsInAlbum = await fs.readdir(albumPath, { withFileTypes: true });
                         
-                        const tracks = allDirentsInAlbum
+                        album.tracks = allDirentsInAlbum
                             .filter(trackDirent => 
                                 trackDirent.isFile() && allowedExtensions.includes(path.extname(trackDirent.name).toLowerCase())
                             )
-                            .map(trackDirent => trackDirent.name);
-
-                        album.tracks = tracks;
+                            .map(trackDirent => ({
+                                name: trackDirent.name,
+                                path: path.join(albumPath, trackDirent.name) // Include track path
+                            }));
 
                         if (album.tracks.length > 0) {
                             artist.albums.push(album);
@@ -56,24 +57,18 @@ async function scanDirectory(musicPath) {
                     }
                 }));
                 
-                // Only add artists that contain albums
                 if (artist.albums.length > 0) {
                     library.push(artist);
                 }
             }
         }));
-
     } catch (error) {
         console.error(`Error scanning path ${musicPath}:`, error.message);
         throw new Error(`Failed to scan ${musicPath}. Please check path and permissions.`);
     }
     
-    // Sort artists and albums alphabetically
     library.sort((a, b) => a.name.localeCompare(b.name));
-    library.forEach(artist => {
-        artist.albums.sort((a, b) => a.title.localeCompare(b.title));
-    });
-
+    library.forEach(artist => artist.albums.sort((a, b) => a.title.localeCompare(b.title)));
     return library;
 }
 
@@ -134,28 +129,32 @@ app.post('/api/scan', async (req, res) => {
 
 // Rename endpoint
 app.post('/api/rename', async (req, res) => {
+    console.log('--- RENAME REQUEST RECEIVED ---');
     const { oldPath, newName } = req.body;
+    console.log('Request Body:', req.body);
 
     if (!oldPath || !newName) {
+        console.log('Rename failed: Missing old path or new name.');
         return res.status(400).json({ error: 'Missing old path or new name.' });
     }
 
-    // Basic security check to prevent invalid characters
     if (/[\\/:"*?<>|]/.test(newName)) {
+        console.log('Rename failed: New name contains invalid characters.');
         return res.status(400).json({ error: 'New name contains invalid characters.' });
     }
 
     const parentDirectory = path.dirname(oldPath);
     const newPath = path.join(parentDirectory, newName);
 
-    console.log(`Rename request: from "${oldPath}" to "${newPath}"`);
+    console.log(`Attempting fs.rename from "${oldPath}" to "${newPath}"`);
 
     try {
         await fs.rename(oldPath, newPath);
-        res.json({ success: true, message: 'Directory renamed successfully.' });
+        console.log('fs.rename SUCCEEDED.');
+        res.json({ success: true, message: 'Renamed successfully.' });
     } catch (error) {
-        console.error(`[500] Error renaming path:`, error);
-        res.status(500).json({ error: `Could not rename. Check permissions and if the directory is in use.` });
+        console.error(`fs.rename FAILED. Error:`, error);
+        res.status(500).json({ error: `Could not rename. Check permissions.` });
     }
 });
 
