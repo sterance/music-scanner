@@ -1,0 +1,299 @@
+:root {
+  --background-color: #121212;
+  --surface-color: #1e1e1e;
+  --primary-color: #1DB954; /* Spotify Green */
+  --text-color: #ffffff;
+  --text-secondary-color: #b3b3b3;
+  --border-color: #2c2c2c;
+  --error-color: #e53e3e;
+  --button-secondary-bg: #333;
+}
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+.App {
+  text-align: center;
+  padding: 2rem;
+  margin: auto;
+}
+.App-header {
+  margin-bottom: 2rem;
+}
+.App-header h1 {
+  font-size: 2.5rem;
+  color: var(--primary-color);
+  margin-bottom: 0.5rem;
+}
+.App-header p {
+  color: var(--text-secondary-color);
+}
+.add-directory-controls {
+  background-color: var(--surface-color);
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  display: flex;
+  gap: 0.5rem;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.add-directory-controls input {
+  flex-grow: 1;
+  min-width: 100px;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  background-color: #2a2a2a;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-color);
+  transition: border-color 0.2s;
+}
+.add-directory-controls input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+.button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  color: white;
+  white-space: nowrap;
+}
+.button:disabled {
+  background-color: #555;
+  cursor: not-allowed;
+  color: #999;
+}
+.button-primary {
+  background-color: var(--primary-color);
+}
+.button-primary:hover:not(:disabled) {
+  background-color: #1ed760;
+}
+.button-secondary {
+  background-color: var(--button-secondary-bg);
+}
+.button-secondary:hover:not(:disabled) {
+    background-color: #444;
+}
+.button-icon {
+  padding: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.button-icon svg {
+    width: 20px;
+    height: 20px;
+}
+.directory-item {
+  background-color: var(--surface-color);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  text-align: left;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.directory-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0 0.5rem;
+}
+.directory-path {
+  font-size: 0.9rem;
+  color: var(--text-secondary-color);
+  word-break: break-all;
+}
+.directory-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+.error-message {
+  background-color: var(--error-color);
+  color: white;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+.library-display {
+  text-align: left;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+.artist-card {
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-top: 1rem;
+  border: 1px solid var(--border-color);
+}
+.album-section {
+  margin-left: 1rem;
+  padding-left: 1rem;
+  border-left: 2px solid var(--border-color);
+  margin-top: 1rem;
+}
+.collapsible-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+.collapsible-header h3, .collapsible-header h4 {
+    margin: 0;
+}
+.collapsible-header svg {
+    flex-shrink: 0;
+    transition: transform 0.2s ease-in-out;
+}
+.collapsible-header svg.expanded {
+    transform: rotate(90deg);
+}
+.collapsible-content {
+    padding-left: 2rem;
+}
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+.modal-content {
+    background-color: var(--surface-color);
+    padding: 1.5rem;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.modal-header h2 {
+    margin: 0;
+}
+.modal-close-button {
+    background: none;
+    border: none;
+    color: var(--text-secondary-color);
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+.file-browser-body {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+.current-path-display {
+    background-color: #2a2a2a;
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-family: 'Courier New', Courier, monospace;
+    word-break: break-all;
+}
+.file-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.file-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.file-item:hover {
+    background-color: #2a2a2a;
+}
+.file-item.selected {
+    background-color: var(--primary-color);
+    color: white;
+}
+.file-item svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+.modal-footer {
+    padding-top: 1rem;
+    margin-top: 1rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.inline-edit-form {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+.inline-edit-form input {
+  flex-grow: 1;
+  padding: 0.5rem;
+  font-size: 1rem;
+  background-color: #3a3a3a;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-color);
+}
+.inline-edit-form .button {
+  padding: 0.5rem;
+}
+
+.button-edit {
+  padding: 0.3rem;
+  background-color: var(--button-secondary-bg);
+}
+
+.button-edit svg {
+  width: 12px;
+  height: 12px;
+}
+
+@media (max-width: 650px) {
+  .add-directory-controls {
+    flex-wrap: wrap;
+  }
+  .add-directory-controls input {
+    flex-basis: 100%;
+  }
+  .add-directory-controls .button {
+    flex-grow: 1;
+  }
+}
