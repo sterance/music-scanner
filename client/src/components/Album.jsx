@@ -11,15 +11,9 @@ function Album({ album, onRenameSuccess }) {
     const handleRename = async (e) => {
         e.preventDefault();
         if (!onRenameSuccess) return;
-
-        if (newName === album.title || !newName) {
-            setIsEditing(false);
-            return;
-        }
-
+        if (newName === album.title || !newName) { setIsEditing(false); return; }
         const payload = { oldPath: album.path, newName };
         console.log('Rename album payload:', payload);
-
         try {
             await axios.post('http://localhost:3001/api/rename', payload);
             setIsEditing(false);
@@ -32,69 +26,44 @@ function Album({ album, onRenameSuccess }) {
             setNewName(album.title);
         }
     };
-
-    const handleCancel = (e) => {
-        e?.stopPropagation();
-        setIsEditing(false);
-        setNewName(album.title);
-    };
-
-    const handleKeyDown = (e) => {
-        if (e.key === 'Escape') {
-            handleCancel();
-        }
-    };
+    const handleCancel = (e) => { e?.stopPropagation(); setIsEditing(false); setNewName(album.title); };
+    const handleKeyDown = (e) => { if (e.key === 'Escape') { handleCancel(); } };
 
     return (
         <div className="album-section">
             <div className="collapsible-header" onClick={() => !isEditing && setIsCollapsed(!isCollapsed)}>
                 <ChevronRightIcon className={isCollapsed ? '' : 'expanded'} />
-                
                 {isEditing ? (
                     <form onSubmit={handleRename} className="inline-edit-form">
-                        <input 
-                            type="text"
-                            value={newName}
-                            onChange={(e) => setNewName(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            autoFocus
-                            onClick={(e) => e.stopPropagation()} 
-                        />
+                        <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} onKeyDown={handleKeyDown} autoFocus onClick={(e) => e.stopPropagation()} />
                         <button type="button" className="button button-secondary" onClick={handleCancel}>Cancel</button>
                         <button type="submit" className="button button-primary">Save</button>
                     </form>
-                ) : (
-                    <h4>{album.title}</h4>
-                )}
-
-                {!isEditing && (
-                    <button 
-                        className="button button-edit" 
-                        title="Rename Album" 
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setIsEditing(true);
-                        }}>
-                        <EditIcon />
-                    </button>
-                )}
+                ) : ( <h4>{album.title}</h4> )}
+                {!isEditing && ( <button className="button button-edit" title="Rename Album" onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}> <EditIcon /> </button> )}
             </div>
             
             {!isCollapsed && (
                 <div className="collapsible-content">
-                    <ul>
-                        {album.tracks.map((track, index) => (
-                            <Track 
-                                key={index} 
-                                track={track}
-                                onRenameSuccess={onRenameSuccess} 
-                            />
-                        ))}
-                    </ul>
+                    <table className="track-table">
+                        <thead>
+                            <tr>
+                                <th className="col-name">Track Title</th>
+                                <th className="col-type">Type</th>
+                                <th className="col-bitdepth">Bit Depth</th>
+                                <th className="col-srate">Sample Rate</th>
+                                <th className="col-actions"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {album.tracks.map((track, index) => (
+                                <Track key={index} track={track} onRenameSuccess={onRenameSuccess} />
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             )}
         </div>
     );
 }
-
 export default Album;

@@ -3,11 +3,11 @@ const fs = require('fs').promises;
 const path = require('path');
 const os = require('os');
 const cors = require('cors');
+const mm = require('music-metadata');
 
 const app = express();
 const PORT = 3001;
 
-// --- Middleware ---
 app.use(cors());
 app.use(express.json());
 
@@ -24,32 +24,38 @@ async function scanDirectory(musicPath) {
         await Promise.all(artists.map(async (artistDirent) => {
             if (artistDirent.isDirectory()) {
                 const artistPath = path.join(musicPath, artistDirent.name);
-                const artist = { 
-                    name: artistDirent.name, 
-                    path: artistPath, 
-                    albums: [] 
-                };
+                const artist = { name: artistDirent.name, path: artistPath, albums: [] };
 
                 const albums = await fs.readdir(artistPath, { withFileTypes: true });
                 await Promise.all(albums.map(async (albumDirent) => {
                     if (albumDirent.isDirectory()) {
                         const albumPath = path.join(artistPath, albumDirent.name);
-                        const album = { 
-                            title: albumDirent.name, 
-                            path: albumPath, 
-                            tracks: [] 
-                        };
+                        const album = { title: albumDirent.name, path: albumPath, tracks: [] };
 
-                        const allDirentsInAlbum = await fs.readdir(albumPath, { withFileTypes: true });
+                        const direntsInAlbum = await fs.readdir(albumPath, { withFileTypes: true });
+                        const trackDirents = direntsInAlbum.filter(d => d.isFile() && allowedExtensions.includes(path.extname(d.name).toLowerCase()));
                         
-                        album.tracks = allDirentsInAlbum
-                            .filter(trackDirent => 
-                                trackDirent.isFile() && allowedExtensions.includes(path.extname(trackDirent.name).toLowerCase())
-                            )
-                            .map(trackDirent => ({
-                                name: trackDirent.name,
-                                path: path.join(albumPath, trackDirent.name) // Include track path
-                            }));
+                        const trackPromises = trackDirents.map(async (trackDirent) => {
+                            const trackPath = path.join(albumPath, trackDirent.name);
+                            try {
+                                const metadata = await mm.parseFile(trackPath);
+                                const { bitrate, sampleRate } = metadata.format;
+                                return {
+                                    name: path.parse(trackDirent.name).name,
+                                    extension: path.extname(trackDirent.name),
+                                    path: trackPath,
+                                    bitrate: bitrate ? `${Math.round(bitrate / 1000)} kbps` : 'N/A',
+                                    bitDepth: metadata.format.bitsPerSample ? `${metadata.format.bitsPerSample}-bit` : 'N/A',
+                                    sampleRate: sampleRate ? `${sampleRate / 1000} kHz` : 'N/A'
+                                };
+                            } catch (err) {
+                                console.error(`Could not read metadata for ${trackPath}:`, err.message);
+                                return null;
+                            }
+                        });
+                        
+                        const tracksWithMetadata = (await Promise.all(trackPromises)).filter(Boolean);
+                        album.tracks = tracksWithMetadata;
 
                         if (album.tracks.length > 0) {
                             artist.albums.push(album);

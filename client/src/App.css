@@ -191,7 +191,7 @@ body {
   border-radius: 12px;
   margin-top: 1rem;
   border: 1px solid var(--border-color);
-  max-width: 900px;
+  max-width: 1200px;
   margin-left: auto;
   margin-right: auto;
 }
@@ -206,9 +206,11 @@ body {
     align-items: center;
     gap: 0.5rem;
     cursor: pointer;
+    padding-right: 0.5rem;
 }
 .collapsible-header h3, .collapsible-header h4 {
     margin: 0;
+    flex-grow: 1;
 }
 .collapsible-header svg {
     flex-shrink: 0;
@@ -337,6 +339,48 @@ body {
 
 .track-item:hover .button-edit {
     visibility: visible;
+}
+
+.track-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    table-layout: fixed;
+}
+.track-table th, .track-table td {
+    padding: 0.5rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.track-table th {
+    color: var(--text-secondary-color);
+    font-weight: normal;
+    font-size: 0.9rem;
+}
+.track-table .col-name {
+    width: 66%;
+    /* one part of 100% */
+}
+.track-table .col-type,
+.track-table .col-bitdepth,
+.track-table .col-srate {
+    width: 8%;
+    /* three parts of 100% */
+    text-align: right;
+    color: var(--text-secondary-color);
+}
+.track-table .col-actions {
+    width: 4%;
+    /* one part of 100% */
+    text-align: right;
+}
+.collapsible-content ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
 @media (max-width: 650px) {
