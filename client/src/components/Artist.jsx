@@ -82,9 +82,9 @@ function Artist({ artist, onRenameSuccess }) {
 
             {!isCollapsed && (
                 <div className="collapsible-content">
-                    {artist.albums.map((album, index) => (
+                    {artist.albums.map((album) => (
                         <Album 
-                            key={index} 
+                            key={album.path} 
                             album={album}
                             onRenameSuccess={onRenameSuccess}
                         />

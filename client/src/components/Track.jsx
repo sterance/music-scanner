@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { EditIcon } from './Icons';
 
-function Track({ track, onRenameSuccess }) {
+function Track({ track, onRenameSuccess, displayBitDepth }) {
     const [isEditing, setIsEditing] = useState(false);
     const [newName, setNewName] = useState(track.name);
 
@@ -45,7 +45,8 @@ function Track({ track, onRenameSuccess }) {
                 )}
             </td>
             <td className="col-type">{track.extension}</td>
-            <td className="col-bitdepth">{track.bitDepth}</td>
+            {/* Conditionally render the correct data */}
+            <td className="col-bitdepth">{displayBitDepth ? track.bitDepth : track.bitrate}</td>
             <td className="col-srate">{track.sampleRate}</td>
             <td className="col-actions">
                 {!isEditing && (

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import axios from 'axios';
 import { ChevronRightIcon, EditIcon } from './Icons';
 import Track from './Track';
@@ -7,6 +7,12 @@ function Album({ album, onRenameSuccess }) {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [newName, setNewName] = useState(album.title);
+
+    // Check if any track in this album has a valid bit depth.
+    const hasBitDepth = useMemo(() => {
+        return album.tracks.some(track => track.bitDepth && track.bitDepth !== 'N/A');
+    }, [album.tracks]);
+
 
     const handleRename = async (e) => {
         e.preventDefault();
@@ -50,14 +56,20 @@ function Album({ album, onRenameSuccess }) {
                             <tr>
                                 <th className="col-name">Track Title</th>
                                 <th className="col-type">Type</th>
-                                <th className="col-bitdepth">Bit Depth</th>
+                                {/* Conditionally render the header */}
+                                <th className="col-bitdepth">{hasBitDepth ? 'Bit Depth' : 'Bit Rate'}</th>
                                 <th className="col-srate">Sample Rate</th>
                                 <th className="col-actions"></th>
                             </tr>
                         </thead>
                         <tbody>
-                            {album.tracks.map((track, index) => (
-                                <Track key={index} track={track} onRenameSuccess={onRenameSuccess} />
+                            {album.tracks.map((track) => (
+                                <Track 
+                                    key={track.path} 
+                                    track={track} 
+                                    onRenameSuccess={onRenameSuccess}
+                                    displayBitDepth={hasBitDepth} 
+                                />
                             ))}
                         </tbody>
                     </table>

@@ -11,7 +11,7 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json());
 
-const allowedExtensions = ['.mp3', '.flac', '.alac', '.opus'];
+const allowedExtensions = ['.mp3', '.flac', '.m4a', '.opus'];
 
 async function scanDirectory(musicPath) {
     console.log(`Scanning directory: ${musicPath}`);

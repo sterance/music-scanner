@@ -33,16 +33,15 @@ function LibraryPage({ directories, handleScanAll }) {
         <>
             <header className="page-header">
                 <h1>Library</h1>
-                <p>All your music, combined and sorted.</p>
             </header>
             
             {combinedLibrary.length === 0 ? (
                 <p>No music found. Go to the Settings page to add and scan a directory.</p>
             ) : (
                 <div className="library-display">
-                    {combinedLibrary.map((artist, i) => (
+                    {combinedLibrary.map((artist) => (
                         <Artist 
-                            key={i} 
+                            key={artist.path} 
                             artist={artist}
                             onRenameSuccess={handleScanAll} 
                         />

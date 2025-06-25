@@ -18,23 +18,23 @@ body {
   background-color: var(--background-color);
   color: var(--text-color);
 }
-/* --- Simplified Main Layout --- */
+
 .main-layout {
   display: flex;
   min-height: 100vh;
 }
 .sidebar {
-  width: 200px; /* You mentioned 232px, feel free to adjust this value */
+  width: 200px;
   background-color: #000;
   padding: 1rem;
-  flex-shrink: 0; /* Prevents sidebar from shrinking */
+  flex-shrink: 0;
 }
 .main-content {
-  flex-grow: 1; /* This is the key: makes the main area take all remaining space */
+  flex-grow: 1;
   padding: 2rem;
-  overflow-y: auto; /* Adds a scrollbar if content is too tall */
+  overflow-y: auto;
 }
-/* --- End Simplified Main Layout --- */
+
 .sidebar ul {
   list-style: none;
   padding: 0;
@@ -103,7 +103,7 @@ body {
   border-color: var(--primary-color);
 }
 .button {
-  padding: 0.75rem 1.5rem;
+  padding: 0.5rem 1rem;
   font-size: 1rem;
   font-weight: bold;
   border: none;
@@ -131,14 +131,14 @@ body {
     background-color: #444;
 }
 .button-icon {
-  padding: 0.75rem;
+  padding: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .button-icon svg {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
 }
 .button-edit {
     padding: 0.3rem;
@@ -326,21 +326,6 @@ body {
 .inline-edit-form .button {
     padding: 0.5rem;
 }
-.track-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.25rem 0;
-}
-
-.track-item .button-edit {
-    visibility: hidden;
-}
-
-.track-item:hover .button-edit {
-    visibility: visible;
-}
-
 .track-table {
     width: 100%;
     border-collapse: collapse;
@@ -361,26 +346,46 @@ body {
     font-size: 0.9rem;
 }
 .track-table .col-name {
-    width: 66%;
-    /* one part of 100% */
+    width: 70%;
 }
 .track-table .col-type,
 .track-table .col-bitdepth,
 .track-table .col-srate {
-    width: 8%;
-    /* three parts of 100% */
+    width: 9%;
     text-align: right;
     color: var(--text-secondary-color);
 }
 .track-table .col-actions {
-    width: 4%;
-    /* one part of 100% */
+    width: 3%;
     text-align: right;
 }
-.collapsible-content ul {
-    list-style: none;
+
+.settings-section {
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 3rem;
+}
+.settings-section h2 {
+    text-align: left;
+    color: var(--text-color);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.75rem;
+    margin-bottom: 1.5rem;
+    font-weight: normal;
+    font-size: 1.5rem;
+}
+.quality-settings-container {
+    background-color: var(--surface-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    min-height: 50px;
+}
+.directory-settings-container .add-directory-controls {
+    background: none;
+    box-shadow: none;
     padding: 0;
-    margin: 0;
+    margin-bottom: 1rem;
 }
 
 @media (max-width: 650px) {
