@@ -152,7 +152,6 @@ body {
   background-color: var(--surface-color);
   border-radius: 12px;
   padding: 1rem;
-  margin-bottom: 1.5rem;
   text-align: left;
   max-width: 900px;
   margin-left: auto;
@@ -208,7 +207,7 @@ body {
     cursor: pointer;
     padding-right: 0.5rem;
 }
-.collapsible-header h3, .collapsible-header h4 {
+.collapsible-header h3, .collapsible-header h4, .collapsible-header h5 {
     margin: 0;
     flex-grow: 1;
 }
@@ -390,7 +389,6 @@ body {
 .collapsible-header h5 {
     margin: 0;
     flex-grow: 1;
-    /* font-style: italic; */
     color: var(--text-secondary-color);
     font-weight: bold;
     font-size: 1rem;
@@ -398,13 +396,185 @@ body {
 .disc-section {
   padding-top: 1.1rem
 }
-/* .disc-header {
-    color: var(--text-secondary-color);
-    margin: 1.5rem 0 0.5rem 0;
+.unexpected-items-container {
+    background-color: rgba(255, 184, 0, 0.1);
+    border: 1px solid #ffb800;
+    border-radius: 8px;
+    margin-top: 1.5rem;
+    padding: 1rem;
+}
+.unexpected-items-container h6 {
+    margin: 0 0 1rem 0;
     font-weight: bold;
-    font-size: 1rem;
-} */
+    color: #ffb800;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.unexpected-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem;
+    border-radius: 4px;
+}
+.unexpected-item:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+.unexpected-item-name {
+    font-weight: bold;
+}
+.unexpected-item-reason {
+    color: var(--text-secondary-color);
+    font-style: italic;
+}
+.quality-settings-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+    background-color: var(--surface-color);
+    padding: 1.5rem;
+    border-radius: 12px;
+}
+.quality-list-container {
+    display: flex;
+    flex-direction: column;
+}
+.quality-list-title {
+    margin: 0 0 1rem 0;
+    font-weight: bold;
+    color: var(--text-color);
+    text-align: center;
+}
+.quality-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    background-color: #000;
+    border-radius: 8px;
+    padding: 0.5rem;
+    flex-grow: 1;
+}
+.quality-list-item {
+    padding: 0.75rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary-color);
+}
+.quality-list-item:not(.reorderable):hover {
+    background-color: #2a2a2a;
+    color: var(--text-color);
+}
+.quality-list-item.active {
+    background-color: var(--primary-color);
+    color: white;
+    font-weight: bold;
+}
+.quality-list-item.reorderable {
+    cursor: grab;
+}
+.quality-list-item.reorderable.dragging {
+    opacity: 0.4;
+}
+.quality-list-item.reorderable svg {
+    width: 16px;
+    height: 16px;
+    color: var(--text-secondary-color);
+}
+.settings-section {
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 3rem;
+}
 
+/* This rule targets the clickable header for the whole section */
+.settings-section > .collapsible-header {
+    cursor: pointer;
+    /* border-bottom: 1px solid var(--border-color); */
+    padding-bottom: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.settings-section h2 {
+    text-align: left;
+    color: var(--text-color);
+    font-weight: normal;
+    font-size: 1.5rem;
+    margin: 0;
+    flex-grow: 1;
+}
+
+.quality-settings-container, .directory-settings-container {
+    background-color: var(--surface-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.quality-settings-container {
+    min-height: 50px;
+}
+
+.directory-settings-container .add-directory-controls {
+    background: none;
+    box-shadow: none;
+    padding: 0;
+    margin: 0 0 1rem 0;
+    max-width: none;
+}
+
+.quality-list-item .remove-format-button {
+    margin-left: auto; /* Push the button to the far right */
+    background: none;
+    border: none;
+    color: var(--text-secondary-color);
+    cursor: pointer;
+    visibility: hidden; /* Hide by default */
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+}
+
+.quality-list-item:hover .remove-format-button {
+    visibility: visible; /* Show on hover */
+}
+
+.remove-format-button:hover {
+    color: var(--error-color);
+}
+
+.remove-format-button svg {
+    width: 14px;
+    height: 14px;
+}
+
+.add-format-button {
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 0.75rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px dashed var(--border-color);
+    color: var(--text-secondary-color);
+    font-size: 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+.add-format-button:hover {
+    background-color: var(--surface-color);
+    color: var(--text-color);
+}
+.add-format-button svg {
+    width: 18px;
+    height: 18px;
+}
 
 @media (max-width: 650px) {
   .add-directory-controls {

@@ -2,11 +2,24 @@ import React, { useState, useMemo } from 'react';
 import axios from 'axios';
 import { ChevronRightIcon, EditIcon } from './Icons';
 import Track from './Track';
+import UnexpectedItems from './UnexpectedItems';
 
 function Album({ album, onRenameSuccess }) {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [newName, setNewName] = useState(album.title);
+
+    const unnecessarySubfolder = useMemo(() => {
+        if (album.discs.length === 1 && !album.discs[0].isRoot) {
+            return [{
+                name: album.discs[0].name,
+                reason: 'This subfolder could be removed and tracks moved to the album folder.'
+            }];
+        }
+        return [];
+    }, [album.discs]);
+
+    const hasUnexpectedFiles = album.unexpectedItems && album.unexpectedItems.length > 0;
 
     const handleRename = async (e) => {
         e.preventDefault();
@@ -49,26 +62,35 @@ function Album({ album, onRenameSuccess }) {
                         <DiscSection 
                             key={disc.path} 
                             disc={disc} 
-                            albumTitle={album.title}
                             showDiscHeader={album.discs.length > 1}
                             onRenameSuccess={onRenameSuccess} 
                         />
                     ))}
+                    
+                    <UnexpectedItems 
+                        items={unnecessarySubfolder}
+                        title="Unnecessary Subfolder Found"
+                    />
+
+                    {hasUnexpectedFiles && (
+                        <UnexpectedItems 
+                            items={album.unexpectedItems}
+                            title="Non-Music Files Found"
+                        />
+                    )}
+                    
+
                 </div>
             )}
         </div>
     );
 }
 
-// Sub-component for rendering each disc's content
 function DiscSection({ disc, showDiscHeader, onRenameSuccess }) {
     const [isEditing, setIsEditing] = useState(false);
     const [newName, setNewName] = useState(disc.name);
-
-    const hasBitDepth = useMemo(() => {
-        return disc.tracks.some(track => track.bitDepth && track.bitDepth !== 'N/A');
-    }, [disc.tracks]);
-
+    const hasBitDepth = useMemo(() => disc.tracks.some(track => track.bitDepth && track.bitDepth !== 'N/A'), [disc.tracks]);
+    
     const handleDiscRename = async (e) => {
         e.preventDefault();
         if (!onRenameSuccess) return;
@@ -93,21 +115,20 @@ function DiscSection({ disc, showDiscHeader, onRenameSuccess }) {
     return (
         <div className="disc-section">
             {showDiscHeader && (
-                 <div className="collapsible-header">
+                <div className="collapsible-header">
                     {isEditing ? (
-                        <form onSubmit={handleDiscRename} className="inline-edit-form">
-                           <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} onKeyDown={handleDiscKeyDown} autoFocus onClick={(e) => e.stopPropagation()} />
-                           <button type="button" className="button button-secondary" onClick={handleDiscCancel}>Cancel</button>
-                           <button type="submit" className="button button-primary">Save</button>
-                       </form>
+                         <form onSubmit={handleDiscRename} className="inline-edit-form">
+                            <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} onKeyDown={handleDiscKeyDown} autoFocus onClick={(e) => e.stopPropagation()} />
+                            <button type="button" className="button button-secondary" onClick={handleDiscCancel}>Cancel</button>
+                            <button type="submit" className="button button-primary">Save</button>
+                        </form>
                     ) : ( <h5>{disc.name}</h5> )}
-                    {/* The edit button only appears if it's a subfolder */}
                     {!isEditing && !disc.isRoot && (
                         <button className="button button-edit" title="Rename Disc" onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}>
                             <EditIcon />
                         </button>
                     )}
-                 </div>
+                </div>
             )}
 
             <table className="track-table">

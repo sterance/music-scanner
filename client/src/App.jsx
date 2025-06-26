@@ -6,11 +6,19 @@ import Sidebar from './components/Sidebar';
 import LibraryPage from './pages/LibraryPage';
 import SettingsPage from './pages/SettingsPage';
 
+const defaultQualitySettings = {
+    formats: ['FLAC', 'WAV', 'AIFF', 'MP3', 'AAC', 'Opus', 'Ogg'],
+    format: 'FLAC',
+    bitrate: '320+ kbps',
+    bitDepth: '16 bit',
+    sampleRate: '44.1 kHz',
+};
+
 function App() {
   const [currentPage, setCurrentPage] = useState('library');
   const [directories, setDirectories] = useState([]);
+  const [qualitySettings, setQualitySettings] = useState(defaultQualitySettings);
 
-  // Load directories from localStorage on initial mount
   useEffect(() => {
     try {
         const savedDirectories = localStorage.getItem('musicDirectories');
@@ -18,12 +26,20 @@ function App() {
             const dirs = JSON.parse(savedDirectories).map(dir => ({...dir, isLoading: false, error: null}));
             setDirectories(dirs);
         }
+        const savedQualitySettings = localStorage.getItem('qualitySettings');
+        if (savedQualitySettings) {
+            const loadedSettings = JSON.parse(savedQualitySettings);
+            setQualitySettings(prevDefaults => ({ ...prevDefaults, ...loadedSettings }));
+        }
     } catch (error) {
         console.error("Failed to parse from localStorage", error);
     }
   }, []);
 
-  // Save directories to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('qualitySettings', JSON.stringify(qualitySettings));
+  }, [qualitySettings]);
+
   useEffect(() => {
     if (directories.length > 0) {
         localStorage.setItem('musicDirectories', JSON.stringify(directories));
@@ -33,16 +49,13 @@ function App() {
     }
   }, [directories]);
 
+
   const handleAddDirectory = (pathInput) => {
     if (pathInput && !directories.some(dir => dir.path === pathInput)) {
       setDirectories([...directories, { id: Date.now(), path: pathInput, library: [], isLoading: false, error: null }]);
     }
   };
-
-  const handleRemoveDirectory = (id) => {
-      setDirectories(directories.filter(dir => dir.id !== id));
-  };
-  
+  const handleRemoveDirectory = (id) => { setDirectories(directories.filter(dir => dir.id !== id)); };
   const handleScan = async (id) => {
     const dirToScan = directories.find(d => d.id === id);
     if (!dirToScan) return;
@@ -55,29 +68,21 @@ function App() {
       setDirectories(dirs => dirs.map(d => d.id === id ? { ...d, isLoading: false, library: [], error: errorMsg } : d));
     }
   };
-
-  // Scans all directories. Used to refresh the library after a rename.
-  const handleScanAll = async () => {
-    for (const dir of directories) {
-        await handleScan(dir.id);
-    }
-  };
+  const handleScanAll = async () => { for (const dir of directories) { await handleScan(dir.id); } };
 
   return (
     <div className="main-layout">
         <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
         <main className="main-content">
-            {currentPage === 'library' && 
-                <LibraryPage 
-                    directories={directories} 
-                    handleScanAll={handleScanAll}
-                />}
+            {currentPage === 'library' && <LibraryPage directories={directories} handleScanAll={handleScanAll} />}
             {currentPage === 'settings' && 
                 <SettingsPage 
                     directories={directories}
                     handleAddDirectory={handleAddDirectory}
                     handleRemoveDirectory={handleRemoveDirectory}
                     handleScan={handleScan}
+                    qualitySettings={qualitySettings}
+                    setQualitySettings={setQualitySettings}
                 />}
         </main>
     </div>
