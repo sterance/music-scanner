@@ -14,22 +14,31 @@ const defaultQualitySettings = {
     sampleRate: '44.1 kHz',
 };
 
+const defaultLibraryFilters = {
+    below: true,
+    target: true,
+    above: true,
+};
+
 function App() {
   const [currentPage, setCurrentPage] = useState('library');
   const [directories, setDirectories] = useState([]);
   const [qualitySettings, setQualitySettings] = useState(defaultQualitySettings);
+  const [libraryFilters, setLibraryFilters] = useState(defaultLibraryFilters);
 
   useEffect(() => {
     try {
         const savedDirectories = localStorage.getItem('musicDirectories');
         if (savedDirectories) {
-            const dirs = JSON.parse(savedDirectories).map(dir => ({...dir, isLoading: false, error: null}));
-            setDirectories(dirs);
+            setDirectories(JSON.parse(savedDirectories).map(dir => ({...dir, isLoading: false, error: null})));
         }
         const savedQualitySettings = localStorage.getItem('qualitySettings');
         if (savedQualitySettings) {
-            const loadedSettings = JSON.parse(savedQualitySettings);
-            setQualitySettings(prevDefaults => ({ ...prevDefaults, ...loadedSettings }));
+            setQualitySettings(prev => ({ ...prev, ...JSON.parse(savedQualitySettings) }));
+        }
+        const savedLibraryFilters = localStorage.getItem('libraryFilters');
+        if (savedLibraryFilters) {
+            setLibraryFilters(JSON.parse(savedLibraryFilters));
         }
     } catch (error) {
         console.error("Failed to parse from localStorage", error);
@@ -41,6 +50,10 @@ function App() {
   }, [qualitySettings]);
 
   useEffect(() => {
+    localStorage.setItem('libraryFilters', JSON.stringify(libraryFilters));
+  }, [libraryFilters]);
+
+  useEffect(() => {
     if (directories.length > 0) {
         localStorage.setItem('musicDirectories', JSON.stringify(directories));
     } else {
@@ -50,11 +63,7 @@ function App() {
   }, [directories]);
 
 
-  const handleAddDirectory = (pathInput) => {
-    if (pathInput && !directories.some(dir => dir.path === pathInput)) {
-      setDirectories([...directories, { id: Date.now(), path: pathInput, library: [], isLoading: false, error: null }]);
-    }
-  };
+  const handleAddDirectory = (pathInput) => { if (pathInput && !directories.some(dir => dir.path === pathInput)) { setDirectories([...directories, { id: Date.now(), path: pathInput, library: [], isLoading: false, error: null }]); } };
   const handleRemoveDirectory = (id) => { setDirectories(directories.filter(dir => dir.id !== id)); };
   const handleScan = async (id) => {
     const dirToScan = directories.find(d => d.id === id);
@@ -74,7 +83,14 @@ function App() {
     <div className="main-layout">
         <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
         <main className="main-content">
-            {currentPage === 'library' && <LibraryPage directories={directories} handleScanAll={handleScanAll} />}
+            {currentPage === 'library' && 
+                <LibraryPage 
+                    directories={directories}
+                    qualitySettings={qualitySettings}
+                    libraryFilters={libraryFilters}
+                    setLibraryFilters={setLibraryFilters}
+                    handleScanAll={handleScanAll} 
+                />}
             {currentPage === 'settings' && 
                 <SettingsPage 
                     directories={directories}
@@ -88,5 +104,4 @@ function App() {
     </div>
   );
 }
-
 export default App;

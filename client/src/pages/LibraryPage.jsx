@@ -1,9 +1,12 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import Artist from '../components/Artist';
+import FilterBar from '../components/FilterBar';
+import { compareTrackToTarget } from '../utils/quality';
 
-function LibraryPage({ directories, handleScanAll }) {
+function LibraryPage({ directories, qualitySettings, libraryFilters, setLibraryFilters, handleScanAll }) {
+    const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(true);
 
-    const combinedLibrary = useMemo(() => {
+    const filteredLibrary = useMemo(() => {
         const artistMap = new Map();
         directories.forEach(dir => {
             if (dir.library && dir.library.length > 0) {
@@ -13,9 +16,7 @@ function LibraryPage({ directories, handleScanAll }) {
                         const existingArtist = artistMap.get(artistKey);
                         const existingAlbumTitles = new Set(existingArtist.albums.map(a => a.title.toLowerCase()));
                         artist.albums.forEach(newAlbum => {
-                            if (!existingAlbumTitles.has(newAlbum.title.toLowerCase())) {
-                                existingArtist.albums.push(newAlbum);
-                            }
+                            if (!existingAlbumTitles.has(newAlbum.title.toLowerCase())) { existingArtist.albums.push(newAlbum); }
                         });
                         existingArtist.albums.sort((a, b) => a.title.localeCompare(b.title));
                     } else {
@@ -24,10 +25,36 @@ function LibraryPage({ directories, handleScanAll }) {
                 });
             }
         });
-        const sortedArtists = Array.from(artistMap.values());
-        sortedArtists.sort((a, b) => a.name.localeCompare(b.name));
-        return sortedArtists;
-    }, [directories]);
+        
+        const filteredArtists = [];
+        Array.from(artistMap.values()).forEach(artist => {
+            const newArtist = { ...artist, albums: [] };
+            artist.albums.forEach(album => {
+                const newAlbum = { ...album, discs: [] };
+                album.discs.forEach(disc => {
+                    const newDisc = { ...disc, tracks: [] };
+                    disc.tracks.forEach(track => {
+                        const comparison = compareTrackToTarget(track, qualitySettings);
+                        if (libraryFilters[comparison]) {
+                            newDisc.tracks.push(track);
+                        }
+                    });
+                    if (newDisc.tracks.length > 0) {
+                        newAlbum.discs.push(newDisc);
+                    }
+                });
+                if (newAlbum.discs.length > 0) {
+                    newArtist.albums.push(newAlbum);
+                }
+            });
+            if (newArtist.albums.length > 0) {
+                filteredArtists.push(newArtist);
+            }
+        });
+
+        filteredArtists.sort((a, b) => a.name.localeCompare(b.name));
+        return filteredArtists;
+    }, [directories, qualitySettings, libraryFilters]);
 
     return (
         <>
@@ -35,16 +62,19 @@ function LibraryPage({ directories, handleScanAll }) {
                 <h1>Library</h1>
             </header>
             
-            {combinedLibrary.length === 0 ? (
-                <p>No music found. Go to the Settings page to add and scan a directory.</p>
+            <FilterBar 
+                filters={libraryFilters}
+                setFilters={setLibraryFilters}
+                isCollapsed={isFiltersCollapsed}
+                setIsCollapsed={setIsFiltersCollapsed}
+            />
+
+            {filteredLibrary.length === 0 ? (
+                <p>No music found that matches your filter criteria. Try adjusting the filters or scanning a directory in Settings.</p>
             ) : (
                 <div className="library-display">
-                    {combinedLibrary.map((artist) => (
-                        <Artist 
-                            key={artist.path} 
-                            artist={artist}
-                            onRenameSuccess={handleScanAll} 
-                        />
+                    {filteredLibrary.map((artist) => (
+                        <Artist key={artist.path} artist={artist} onRenameSuccess={handleScanAll} />
                     ))}
                 </div>
             )}

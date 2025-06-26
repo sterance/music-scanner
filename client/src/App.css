@@ -575,6 +575,87 @@ body {
     width: 18px;
     height: 18px;
 }
+.filter-section {
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 2rem;
+}
+
+.filter-section > .collapsible-header {
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.filter-section h2 {
+    text-align: left;
+    color: var(--text-color);
+    font-weight: normal;
+    font-size: 1.5rem;
+    margin: 0;
+    flex-grow: 1;
+}
+
+.filter-options {
+    background-color: var(--surface-color);
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+}
+
+.filter-group {
+    position: relative;
+}
+
+.filter-checkbox-input {
+    /* Hide the actual checkbox input completely */
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.filter-button-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    /* Default (unchecked) state */
+    background-color: var(--button-secondary-bg);
+    color: var(--text-secondary-color);
+    border: 1px solid var(--border-color);
+}
+
+.filter-button-label svg {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.2s;
+    /* Icon is hidden by default */
+    transform: scale(0);
+}
+
+/* Styles for when the checkbox is checked */
+.filter-checkbox-input:checked + .filter-button-label {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.filter-checkbox-input:checked + .filter-button-label svg {
+    /* Show the icon when checked */
+    transform: scale(1);
+}
+
+.main-content p {
+  text-align: center;
+}
 
 @media (max-width: 650px) {
   .add-directory-controls {
