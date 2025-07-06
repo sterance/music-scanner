@@ -14,6 +14,14 @@ function Sidebar({ currentPage, setCurrentPage }) {
                 </li>
                 <li>
                     <button 
+                        className={`sidebar-button ${currentPage === 'converter' ? 'active' : ''}`}
+                        onClick={() => setCurrentPage('converter')}
+                    >
+                        Converter
+                    </button>
+                </li>
+                <li>
+                    <button 
                         className={`sidebar-button ${currentPage === 'settings' ? 'active' : ''}`}
                         onClick={() => setCurrentPage('settings')}
                     >

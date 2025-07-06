@@ -5,6 +5,7 @@ import './App.css';
 import Sidebar from './components/Sidebar';
 import LibraryPage from './pages/LibraryPage';
 import SettingsPage from './pages/SettingsPage';
+import ConverterPage from './pages/ConverterPage';
 
 const defaultQualitySettings = {
     formats: ['FLAC', 'WAV', 'AIFF', 'MP3', 'AAC', 'Opus', 'Ogg'],
@@ -13,7 +14,6 @@ const defaultQualitySettings = {
     bitDepth: '16 bit',
     sampleRate: '44.1 kHz',
 };
-
 const defaultLibraryFilters = {
     below: true,
     target: true,
@@ -23,25 +23,39 @@ const defaultLibraryFilters = {
 function App() {
   const [currentPage, setCurrentPage] = useState('library');
   const [directories, setDirectories] = useState([]);
+  const [library, setLibrary] = useState([]);
   const [qualitySettings, setQualitySettings] = useState(defaultQualitySettings);
   const [libraryFilters, setLibraryFilters] = useState(defaultLibraryFilters);
+  const [conversionQueue, setConversionQueue] = useState([]);
 
   useEffect(() => {
-    try {
-        const savedDirectories = localStorage.getItem('musicDirectories');
-        if (savedDirectories) {
-            setDirectories(JSON.parse(savedDirectories).map(dir => ({...dir, isLoading: false, error: null})));
+    const fetchInitialData = async () => {
+        try {
+            const dirsResponse = await axios.get('http://localhost:3001/api/directories');
+            setDirectories(dirsResponse.data);
+            const libraryResponse = await axios.get('http://localhost:3001/api/library');
+            setLibrary(libraryResponse.data);
+        } catch (error) {
+            console.error("Failed to fetch initial data from database:", error);
         }
+    };
+    fetchInitialData();
+
+    try {
         const savedQualitySettings = localStorage.getItem('qualitySettings');
         if (savedQualitySettings) {
-            setQualitySettings(prev => ({ ...prev, ...JSON.parse(savedQualitySettings) }));
+            setQualitySettings({ ...defaultQualitySettings, ...JSON.parse(savedQualitySettings) });
         }
         const savedLibraryFilters = localStorage.getItem('libraryFilters');
         if (savedLibraryFilters) {
             setLibraryFilters(JSON.parse(savedLibraryFilters));
         }
+        const savedConversionQueue = localStorage.getItem('conversionQueue');
+        if (savedConversionQueue) {
+            setConversionQueue(JSON.parse(savedConversionQueue));
+        }
     } catch (error) {
-        console.error("Failed to parse from localStorage", error);
+        console.error("Failed to parse settings from localStorage", error);
     }
   }, []);
 
@@ -54,29 +68,45 @@ function App() {
   }, [libraryFilters]);
 
   useEffect(() => {
-    if (directories.length > 0) {
-        localStorage.setItem('musicDirectories', JSON.stringify(directories));
-    } else {
-        const saved = localStorage.getItem('musicDirectories');
-        if(saved) localStorage.removeItem('musicDirectories');
+    localStorage.setItem('conversionQueue', JSON.stringify(conversionQueue));
+  }, [conversionQueue]);
+
+  const handleAddDirectory = async (pathInput) => {
+    if (pathInput && !directories.some(dir => dir.path === pathInput)) {
+        try {
+            const response = await axios.post('http://localhost:3001/api/directories', { path: pathInput });
+            setDirectories([...directories, response.data]);
+        } catch (error) {
+            console.error("Failed to add directory:", error);
+            alert("Error: Could not add directory.");
+        }
     }
-  }, [directories]);
+  };
 
-
-  const handleAddDirectory = (pathInput) => { if (pathInput && !directories.some(dir => dir.path === pathInput)) { setDirectories([...directories, { id: Date.now(), path: pathInput, library: [], isLoading: false, error: null }]); } };
-  const handleRemoveDirectory = (id) => { setDirectories(directories.filter(dir => dir.id !== id)); };
+  const handleRemoveDirectory = async (id) => {
+    try {
+        await axios.delete(`http://localhost:3001/api/directories/${id}`);
+        setDirectories(directories.filter(dir => dir.id !== id));
+        const libraryResponse = await axios.get('http://localhost:3001/api/library');
+        setLibrary(libraryResponse.data);
+    } catch (error) {
+        console.error("Failed to remove directory:", error);
+        alert("Error: Could not remove directory.");
+    }
+  };
+  
   const handleScan = async (id) => {
     const dirToScan = directories.find(d => d.id === id);
     if (!dirToScan) return;
-    setDirectories(dirs => dirs.map(d => d.id === id ? { ...d, isLoading: true, error: null } : d));
     try {
-      const res = await axios.post('http://localhost:3001/api/scan', { directory: dirToScan.path });
-      setDirectories(dirs => dirs.map(d => d.id === id ? { ...d, isLoading: false, library: res.data } : d));
+      const res = await axios.post('http://localhost:3001/api/scan', { directoryId: id, path: dirToScan.path });
+      setLibrary(res.data);
     } catch (err) {
-      const errorMsg = err.response?.data?.error || 'An unexpected error occurred.';
-      setDirectories(dirs => dirs.map(d => d.id === id ? { ...d, isLoading: false, library: [], error: errorMsg } : d));
+      console.error("Scan failed:", err);
+      alert("Scan failed. See console for details.");
     }
   };
+
   const handleScanAll = async () => { for (const dir of directories) { await handleScan(dir.id); } };
 
   return (
@@ -85,11 +115,17 @@ function App() {
         <main className="main-content">
             {currentPage === 'library' && 
                 <LibraryPage 
-                    directories={directories}
+                    library={library}
                     qualitySettings={qualitySettings}
                     libraryFilters={libraryFilters}
                     setLibraryFilters={setLibraryFilters}
                     handleScanAll={handleScanAll} 
+                />}
+            {currentPage === 'converter' && 
+                <ConverterPage 
+                    qualitySettings={qualitySettings} 
+                    conversionQueue={conversionQueue} 
+                    setConversionQueue={setConversionQueue} 
                 />}
             {currentPage === 'settings' && 
                 <SettingsPage 
@@ -104,4 +140,5 @@ function App() {
     </div>
   );
 }
+
 export default App;

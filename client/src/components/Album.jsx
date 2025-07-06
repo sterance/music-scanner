@@ -11,10 +11,7 @@ function Album({ album, onRenameSuccess }) {
 
     const unnecessarySubfolder = useMemo(() => {
         if (album.discs.length === 1 && !album.discs[0].isRoot) {
-            return [{
-                name: album.discs[0].name,
-                reason: 'This subfolder could be removed and tracks moved to the album folder.'
-            }];
+            return [{ name: album.discs[0].name, reason: 'This subfolder could be removed.' }];
         }
         return [];
     }, [album.discs]);
@@ -66,20 +63,8 @@ function Album({ album, onRenameSuccess }) {
                             onRenameSuccess={onRenameSuccess} 
                         />
                     ))}
-                    
-                    <UnexpectedItems 
-                        items={unnecessarySubfolder}
-                        title="Unnecessary Subfolder Found"
-                    />
-
-                    {hasUnexpectedFiles && (
-                        <UnexpectedItems 
-                            items={album.unexpectedItems}
-                            title="Non-Music Files Found"
-                        />
-                    )}
-                    
-
+                    <UnexpectedItems items={unnecessarySubfolder} title="Unnecessary Subfolder Found" />
+                    {hasUnexpectedFiles && <UnexpectedItems items={album.unexpectedItems} title="Non-Music Files Found" />}
                 </div>
             )}
         </div>
@@ -130,7 +115,6 @@ function DiscSection({ disc, showDiscHeader, onRenameSuccess }) {
                     )}
                 </div>
             )}
-
             <table className="track-table">
                 <thead>
                     <tr>

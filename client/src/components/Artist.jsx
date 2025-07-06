@@ -48,15 +48,15 @@ function Artist({ artist, onRenameSuccess }) {
 
             {!isCollapsed && (
                 <div className="collapsible-content">
+                    {artist.albums.map((album) => (
+                        <Album key={album.path} album={album} onRenameSuccess={onRenameSuccess} />
+                    ))}
                     {hasUnexpected && (
                         <UnexpectedItems 
                             items={artist.unexpectedItems}
                             title="Non-Music Files Found"
                         />
                     )}
-                    {artist.albums.map((album) => (
-                        <Album key={album.path} album={album} onRenameSuccess={onRenameSuccess} />
-                    ))}
                 </div>
             )}
         </div>
