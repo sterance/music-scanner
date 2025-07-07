@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { EditIcon } from './Icons';
+import { compareTrackToTarget } from '../utils/quality';
 
-function Track({ track, onRenameSuccess, displayBitDepth }) {
+function Track({ track, onRenameSuccess, displayBitDepth, qualitySettings, handleAddToQueue, showConvertColumn }) {
     const [isEditing, setIsEditing] = useState(false);
     const [newName, setNewName] = useState(track.name);
 
@@ -30,9 +31,25 @@ function Track({ track, onRenameSuccess, displayBitDepth }) {
     };
     const handleCancel = () => { setIsEditing(false); setNewName(track.name); };
     const handleKeyDown = (e) => { if (e.key === 'Escape') { handleCancel(); } };
+    
+    const qualityStatus = compareTrackToTarget(track, qualitySettings);
+    const isAboveTarget = qualityStatus === 'above';
 
     return (
         <tr>
+            {showConvertColumn && (
+                <td className="col-convert">
+                    {isAboveTarget && !isEditing && (
+                        <button 
+                            className="button button-convert button-edit" 
+                            title="Add to Conversion Queue"
+                            onClick={() => handleAddToQueue(track)}>
+                            &#x2193; 
+                        </button>
+                    )}
+                </td>
+            )}
+
             <td className="col-name">
                 {isEditing ? (
                     <form onSubmit={handleRename} className="inline-edit-form">
@@ -45,7 +62,6 @@ function Track({ track, onRenameSuccess, displayBitDepth }) {
                 )}
             </td>
             <td className="col-type">{track.extension}</td>
-            {/* Conditionally render the correct data */}
             <td className="col-bitdepth">{displayBitDepth ? track.bitDepth : track.bitrate}</td>
             <td className="col-srate">{track.sampleRate}</td>
             <td className="col-actions">

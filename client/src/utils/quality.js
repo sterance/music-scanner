@@ -13,8 +13,8 @@ const parseSampleRate = (sampleRateStr) => {
 
 const parseBitrate = (bitrateStr) => {
     if (!bitrateStr || bitrateStr === 'N/A') return 0;
-    if (bitrateStr.includes('+')) {
-        return parseInt(bitrateStr, 10) + 1; // Treat 320+ as 321 for comparison
+    if (bitrateStr === 'Hi-Res') {
+        return 400; // Assign a value higher than 320 for comparison
     }
     return parseInt(bitrateStr, 10);
 };

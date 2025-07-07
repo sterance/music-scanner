@@ -344,8 +344,12 @@ body {
     font-weight: normal;
     font-size: 0.9rem;
 }
+.track-table .col-convert {
+    width: 3%;
+    text-align: center;
+}
 .track-table .col-name {
-    width: 70%;
+    width: 67%;
 }
 .track-table .col-type,
 .track-table .col-bitdepth,
@@ -526,55 +530,6 @@ body {
     max-width: none;
 }
 
-.quality-list-item .remove-format-button {
-    margin-left: auto; /* Push the button to the far right */
-    background: none;
-    border: none;
-    color: var(--text-secondary-color);
-    cursor: pointer;
-    visibility: hidden; /* Hide by default */
-    padding: 0.25rem;
-    display: flex;
-    align-items: center;
-}
-
-.quality-list-item:hover .remove-format-button {
-    visibility: visible; /* Show on hover */
-}
-
-.remove-format-button:hover {
-    color: var(--error-color);
-}
-
-.remove-format-button svg {
-    width: 14px;
-    height: 14px;
-}
-
-.add-format-button {
-    width: 100%;
-    margin-top: 0.5rem;
-    padding: 0.75rem;
-    background-color: rgba(255, 255, 255, 0.1);
-    border: 1px dashed var(--border-color);
-    color: var(--text-secondary-color);
-    font-size: 1rem;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.2s, color 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-}
-.add-format-button:hover {
-    background-color: var(--surface-color);
-    color: var(--text-color);
-}
-.add-format-button svg {
-    width: 18px;
-    height: 18px;
-}
 .filter-section {
     max-width: 900px;
     margin-left: auto;
@@ -806,6 +761,14 @@ body {
 .layout-converter .main-content {
   display: flex;
   flex-direction: column;
+}
+
+.button-convert {
+    background-color: #2f5d8c;
+}
+
+.button-convert:hover:not(:disabled) {
+    background-color: #3f7ab7;
 }
 
 @media (max-width: 650px) {

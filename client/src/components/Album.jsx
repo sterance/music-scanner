@@ -3,8 +3,9 @@ import axios from 'axios';
 import { ChevronRightIcon, EditIcon } from './Icons';
 import Track from './Track';
 import UnexpectedItems from './UnexpectedItems';
+import { compareTrackToTarget } from '../utils/quality';
 
-function Album({ album, onRenameSuccess }) {
+function Album({ album, onRenameSuccess, qualitySettings, handleAddToQueue }) {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [newName, setNewName] = useState(album.title);
@@ -60,7 +61,9 @@ function Album({ album, onRenameSuccess }) {
                             key={disc.path} 
                             disc={disc} 
                             showDiscHeader={album.discs.length > 1}
-                            onRenameSuccess={onRenameSuccess} 
+                            onRenameSuccess={onRenameSuccess}
+                            qualitySettings={qualitySettings}
+                            handleAddToQueue={handleAddToQueue}
                         />
                     ))}
                     <UnexpectedItems items={unnecessarySubfolder} title="Unnecessary Subfolder Found" />
@@ -71,11 +74,15 @@ function Album({ album, onRenameSuccess }) {
     );
 }
 
-function DiscSection({ disc, showDiscHeader, onRenameSuccess }) {
+function DiscSection({ disc, showDiscHeader, onRenameSuccess, qualitySettings, handleAddToQueue }) {
     const [isEditing, setIsEditing] = useState(false);
     const [newName, setNewName] = useState(disc.name);
     const hasBitDepth = useMemo(() => disc.tracks.some(track => track.bitDepth && track.bitDepth !== 'N/A'), [disc.tracks]);
     
+    const showConvertColumn = useMemo(() => {
+        return disc.tracks.some(track => compareTrackToTarget(track, qualitySettings) === 'above');
+    }, [disc.tracks, qualitySettings]);
+
     const handleDiscRename = async (e) => {
         e.preventDefault();
         if (!onRenameSuccess) return;
@@ -118,6 +125,7 @@ function DiscSection({ disc, showDiscHeader, onRenameSuccess }) {
             <table className="track-table">
                 <thead>
                     <tr>
+                        {showConvertColumn && <th className="col-convert"></th>}
                         <th className="col-name">Track Title</th>
                         <th className="col-type">Type</th>
                         <th className="col-bitdepth">{hasBitDepth ? 'Bit Depth' : 'Bit Rate'}</th>
@@ -127,7 +135,15 @@ function DiscSection({ disc, showDiscHeader, onRenameSuccess }) {
                 </thead>
                 <tbody>
                     {disc.tracks.map((track) => (
-                        <Track key={track.path} track={track} onRenameSuccess={onRenameSuccess} displayBitDepth={hasBitDepth} />
+                        <Track 
+                            key={track.path} 
+                            track={track} 
+                            onRenameSuccess={onRenameSuccess} 
+                            displayBitDepth={hasBitDepth}
+                            qualitySettings={qualitySettings}
+                            handleAddToQueue={handleAddToQueue}
+                            showConvertColumn={showConvertColumn}
+                        />
                     ))}
                 </tbody>
             </table>

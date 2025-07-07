@@ -8,9 +8,9 @@ import SettingsPage from './pages/SettingsPage';
 import ConverterPage from './pages/ConverterPage';
 
 const defaultQualitySettings = {
-    formats: ['FLAC', 'WAV', 'AIFF', 'MP3', 'AAC', 'Opus', 'Ogg'],
+    formats: ['FLAC', 'ALAC', 'WAV', 'AIFF', 'Opus', 'Vorbis', 'AAC', 'MP3'],
     format: 'FLAC',
-    bitrate: '320+ kbps',
+    bitrate: 'Hi-Res',
     bitDepth: '16 bit',
     sampleRate: '44.1 kHz',
 };
@@ -28,6 +28,47 @@ function App() {
   const [libraryFilters, setLibraryFilters] = useState(defaultLibraryFilters);
   const [conversionQueue, setConversionQueue] = useState([]);
 
+  // --- WebSocket Connection ---
+  useEffect(() => {
+    const ws = new WebSocket('ws://localhost:3001');
+
+    ws.onopen = () => console.log('WebSocket connection established');
+    ws.onclose = () => console.log('WebSocket connection closed');
+    ws.onerror = (error) => console.error('WebSocket error:', error);
+
+    ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        console.log('WebSocket message received:', data);
+
+        switch (data.type) {
+            case 'queue_update':
+                setConversionQueue(data.queue);
+                break;
+            case 'status_update':
+                setConversionQueue(prevQueue =>
+                    prevQueue.map(item =>
+                        item.path === data.path ? { ...item, status: data.status, reason: data.reason || null } : item
+                    )
+                );
+                break;
+            case 'progress':
+                 setConversionQueue(prevQueue =>
+                    prevQueue.map(item =>
+                        item.path === data.path ? { ...item, progress: data.percent } : item
+                    )
+                );
+                break;
+            default:
+                break;
+        }
+    };
+
+    return () => {
+        ws.close();
+    };
+  }, []);
+
+  // --- Load initial data ---
   useEffect(() => {
     const fetchInitialData = async () => {
         try {
@@ -40,7 +81,7 @@ function App() {
         }
     };
     fetchInitialData();
-
+    
     try {
         const savedQualitySettings = localStorage.getItem('qualitySettings');
         if (savedQualitySettings) {
@@ -50,15 +91,12 @@ function App() {
         if (savedLibraryFilters) {
             setLibraryFilters(JSON.parse(savedLibraryFilters));
         }
-        const savedConversionQueue = localStorage.getItem('conversionQueue');
-        if (savedConversionQueue) {
-            setConversionQueue(JSON.parse(savedConversionQueue));
-        }
     } catch (error) {
         console.error("Failed to parse settings from localStorage", error);
     }
   }, []);
 
+  // --- Save settings to localStorage ---
   useEffect(() => {
     localStorage.setItem('qualitySettings', JSON.stringify(qualitySettings));
   }, [qualitySettings]);
@@ -67,10 +105,7 @@ function App() {
     localStorage.setItem('libraryFilters', JSON.stringify(libraryFilters));
   }, [libraryFilters]);
 
-  useEffect(() => {
-    localStorage.setItem('conversionQueue', JSON.stringify(conversionQueue));
-  }, [conversionQueue]);
-
+  // --- Handler Functions ---
   const handleAddDirectory = async (pathInput) => {
     if (pathInput && !directories.some(dir => dir.path === pathInput)) {
         try {
@@ -109,6 +144,16 @@ function App() {
 
   const handleScanAll = async () => { for (const dir of directories) { await handleScan(dir.id); } };
 
+  const handleAddToQueue = async (track) => {
+    try {
+        await axios.post('http://localhost:3001/api/convert/add', { track, qualitySettings });
+    } catch (error) {
+        const errorMsg = error.response?.data?.message || 'Failed to add track to queue.';
+        console.error(errorMsg);
+        alert(errorMsg);
+    }
+  };
+
   return (
     <div className={`main-layout ${currentPage === 'converter' ? 'layout-converter' : ''}`}>
         <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
@@ -119,7 +164,8 @@ function App() {
                     qualitySettings={qualitySettings}
                     libraryFilters={libraryFilters}
                     setLibraryFilters={setLibraryFilters}
-                    handleScanAll={handleScanAll} 
+                    handleScanAll={handleScanAll}
+                    handleAddToQueue={handleAddToQueue}
                 />}
             {currentPage === 'converter' && 
                 <ConverterPage 

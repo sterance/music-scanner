@@ -1,7 +1,7 @@
 import React from 'react';
 import QueueItem from './QueueItem';
 
-function QueueTable({ queue }) {
+function QueueTable({ queue, setConversionQueue }) {
     return (
         <div className="queue-table-container">
             <table className="queue-table">
@@ -16,7 +16,11 @@ function QueueTable({ queue }) {
                 </thead>
                 <tbody>
                     {queue.map(track => (
-                        <QueueItem key={track.id} track={track} />
+                        <QueueItem 
+                            key={track.path}
+                            track={track} 
+                            setConversionQueue={setConversionQueue} 
+                        />
                     ))}
                 </tbody>
             </table>

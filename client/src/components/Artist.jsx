@@ -4,7 +4,7 @@ import Album from './Album';
 import UnexpectedItems from './UnexpectedItems';
 import { ChevronRightIcon, EditIcon } from './Icons';
 
-function Artist({ artist, onRenameSuccess }) {
+function Artist({ artist, onRenameSuccess, qualitySettings, handleAddToQueue }) {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [newName, setNewName] = useState(artist.name);
@@ -49,7 +49,13 @@ function Artist({ artist, onRenameSuccess }) {
             {!isCollapsed && (
                 <div className="collapsible-content">
                     {artist.albums.map((album) => (
-                        <Album key={album.path} album={album} onRenameSuccess={onRenameSuccess} />
+                        <Album 
+                            key={album.path} 
+                            album={album} 
+                            onRenameSuccess={onRenameSuccess}
+                            qualitySettings={qualitySettings}
+                            handleAddToQueue={handleAddToQueue}
+                        />
                     ))}
                     {hasUnexpected && (
                         <UnexpectedItems 
