@@ -656,27 +656,17 @@ body {
 .main-content p {
   text-align: center;
 }
+
 /* --- Styles for Converter Page --- */
-.converter-layout {
-    display: flex;
-    gap: 2rem;
-    align-items: flex-start;
-}
-
-.converter-main {
-    flex-grow: 1;
-}
-
-.converter-sidebar {
-    width: 280px;
-    flex-shrink: 0;
-}
-
-.target-quality-display, .progress-section, .queue-controls {
+.progress-section, .queue-controls {
     background-color: var(--surface-color);
     border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
+    padding: 0.5rem;
+}
+.target-quality-display {
+    background-color: var(--surface-color);
+    border-radius: 12px;
+    padding: 0.25rem 1rem;
 }
 
 .target-quality-item {
@@ -684,10 +674,6 @@ body {
     justify-content: space-between;
     font-size: 0.9rem;
     color: var(--text-secondary-color);
-}
-
-.target-quality-item:not(:last-child) {
-    margin-bottom: 0.5rem;
 }
 
 .progress-bar-container {
@@ -714,24 +700,6 @@ body {
     background-color: var(--primary-color);
     border-radius: 5px;
     transition: width 0.3s ease;
-}
-
-.queue-controls {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.queue-controls .button {
-    width: 100%;
-    justify-content: center;
-    display: flex;
-    gap: 0.5rem;
-}
-
-.queue-controls .button svg {
-    width: 18px;
-    height: 18px;
 }
 
 .queue-table-container {
@@ -773,6 +741,73 @@ body {
     background-color: #00529b;
     color: white;
 }
+
+.converter-page-layout {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-height: 0;
+}
+
+.converter-page-layout > .page-header {
+    flex-shrink: 0; /* Prevent header from shrinking */
+}
+
+.converter-page-layout .queue-table-container {
+    flex-grow: 1; /* Take remaining space */
+    overflow-y: auto; /* Allow scrolling when content overflows */
+    background-color: var(--surface-color);
+    border-radius: 12px;
+    padding: 1rem;
+    min-height: 0; /* Important: allows flex item to shrink below content size */
+    color-scheme: light dark;
+}
+
+.converter-bottom-bar {
+    flex-shrink: 0; /* Prevent the bottom bar from shrinking */
+    display: flex;
+    gap: 2rem;
+    margin-top: 2rem;
+    align-items: stretch; /* Make children have the same height */
+}
+
+.converter-bottom-bar .progress-section {
+    flex-grow: 1;
+    margin-bottom: 0; /* Remove default margin */
+}
+
+.converter-controls-section {
+    width: 280px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--surface-color);
+    border-radius: 12px;
+    justify-content: center;
+}
+
+.queue-controls {
+    display: flex;
+    flex-direction: row; /* Horizontal layout */
+    gap: 1rem;
+    justify-content: center; /* Center the group of buttons */
+    /* margin-top: auto; Push the controls to the bottom of the sidebar */
+}
+
+.queue-controls .button-icon {
+    flex-grow: 1; /* Make buttons share space equally */
+}
+
+.layout-converter {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.layout-converter .main-content {
+  display: flex;
+  flex-direction: column;
+}
+
 @media (max-width: 650px) {
   .add-directory-controls {
     flex-wrap: wrap;

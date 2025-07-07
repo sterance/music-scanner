@@ -1,5 +1,6 @@
 import React from 'react';
-import { PlayIcon, PauseIcon, ClearIcon, TrashIcon } from '../components/Icons'; // We will add these icons
+import { PlayIcon, PauseIcon, ClearIcon } from '../components/Icons';
+import QueueTable from '../components/QueueTable';
 
 // A sub-component for the read-only target quality display
 function TargetQualityDisplay({ settings }) {
@@ -19,9 +20,8 @@ function TargetQualityDisplay({ settings }) {
 
 // A sub-component for the progress bars
 function ProgressSection() {
-    // These will be driven by state later
-    const overallProgress = 20; // e.g., 20%
-    const currentFileProgress = 65; // e.g., 65%
+    const overallProgress = 20;
+    const currentFileProgress = 65;
 
     return (
         <div className="progress-section">
@@ -41,71 +41,44 @@ function ProgressSection() {
     );
 }
 
-// A sub-component for a single item in the queue
-function QueueItem({ track }) {
-    return (
-        <tr>
-            <td>{track.name}</td>
-            <td>{track.originalQuality}</td>
-            <td>{track.targetQuality}</td>
-            <td><span className={`status-badge status-${track.status.toLowerCase()}`}>{track.status}</span></td>
-            <td className="col-actions">
-                <button className="button button-edit" title="Remove from Queue">
-                    <TrashIcon />
-                </button>
-            </td>
-        </tr>
-    );
-}
-
-
 function ConverterPage({ qualitySettings, conversionQueue }) {
 
-    // Mock data for now, this will come from props later
     const mockQueue = [
         { id: 1, name: "Some Artist - Some Track.flac", originalQuality: "24-bit, 96 kHz", targetQuality: "16-bit, 44.1 kHz", status: "Converting" },
         { id: 2, name: "Another Artist - Another Song.wav", originalQuality: "24-bit, 192 kHz", targetQuality: "16-bit, 44.1 kHz", status: "Pending" },
         { id: 3, name: "A Third Band - A Third Tune.aiff", originalQuality: "16-bit, 48 kHz", targetQuality: "16-bit, 44.1 kHz", status: "Pending" },
+        { id: 4, name: "Test 4", originalQuality: "N/A", targetQuality: "N/A", status: "Pending" },
+        { id: 5, name: "Test 5", originalQuality: "N/A", targetQuality: "N/A", status: "Pending" },
+        { id: 6, name: "Test 6", originalQuality: "N/A", targetQuality: "N/A", status: "Pending" },
+        { id: 7, name: "Test 7", originalQuality: "N/A", targetQuality: "N/A", status: "Pending" },
+        { id: 8, name: "Test 8", originalQuality: "N/A", targetQuality: "N/A", status: "Pending" },
+        { id: 9, name: "Test 9", originalQuality: "N/A", targetQuality: "N/A", status: "Pending" },
+        { id: 10, name: "Test 10", originalQuality: "N/A", targetQuality: "N/A", status: "Pending" },
+        { id: 11, name: "Test 11", originalQuality: "N/A", targetQuality: "N/A", status: "Pending" }
     ];
 
     return (
-        <>
-            <header className="page-header">
-                <h1>Converter</h1>
-            </header>
+        <div className="converter-page-layout">
+            <div className="content-wrapper">
+                <header className="page-header">
+                    <h1>Converter</h1>
+                </header>
+            </div>
 
-            <div className="converter-layout">
-                <div className="converter-main">
-                    <ProgressSection />
-                    <div className="queue-table-container">
-                        <table className="queue-table">
-                            <thead>
-                                <tr>
-                                    <th>Track</th>
-                                    <th>Original</th>
-                                    <th>Target</th>
-                                    <th>Status</th>
-                                    <th className="col-actions"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {mockQueue.map(track => (
-                                    <QueueItem key={track.id} track={track} />
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div className="converter-sidebar">
+            <QueueTable queue={mockQueue} />
+
+            <div className="converter-bottom-bar">
+                <ProgressSection />
+                <div className="converter-controls-section">
                     <TargetQualityDisplay settings={qualitySettings} />
                      <div className="queue-controls">
-                        <button className="button button-primary"><PlayIcon /> Start Queue</button>
-                        <button className="button button-secondary"><PauseIcon /> Pause Queue</button>
-                        <button className="button button-secondary"><ClearIcon /> Clear Completed</button>
+                        <button className="button button-primary button-icon" title="Start Queue"><PlayIcon /></button>
+                        <button className="button button-secondary button-icon" title="Pause Queue"><PauseIcon /></button>
+                        <button className="button button-secondary button-icon" title="Clear Completed"><ClearIcon /></button>
                     </div>
                 </div>
             </div>
-        </>
+        </div>
     );
 }
 

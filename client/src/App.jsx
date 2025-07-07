@@ -110,7 +110,7 @@ function App() {
   const handleScanAll = async () => { for (const dir of directories) { await handleScan(dir.id); } };
 
   return (
-    <div className="main-layout">
+    <div className={`main-layout ${currentPage === 'converter' ? 'layout-converter' : ''}`}>
         <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
         <main className="main-content">
             {currentPage === 'library' && 
