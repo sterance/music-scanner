@@ -47,21 +47,26 @@ function broadcast(data) {
 
 // --- Helper Functions ---
 const allowedExtensions = [ '.dsf', '.dff', '.wav', '.aiff', '.aif', '.bwf', '.flac', '.wv', '.ape', '.opus', '.ogg', '.oga', '.aac', '.mpc', '.mp3', '.wma', '.mp2', '.spx', '.mka', '.mkv', '.webm', '.mp4', '.m4a', '.asf' ];
+
 const getTracksInDir = async (directoryPath) => {
     let tracks = [];
     let otherFiles = [];
-    const direntsInDir = await fs.readdir(directoryPath, { withFileTypes: true });
-    for (const dirent of direntsInDir) {
-        const fullPath = path.join(directoryPath, dirent.name);
-        if (dirent.isFile()) {
-            const extension = path.extname(dirent.name).toLowerCase();
-            if (allowedExtensions.includes(extension)) {
-                try {
-                    const metadata = await mm.parseFile(fullPath);
-                    tracks.push({ name: path.parse(dirent.name).name, extension: path.extname(dirent.name), path: fullPath, bitrate: metadata.format.bitrate ? `${Math.round(metadata.format.bitrate / 1000)} kbps` : 'N/A', bitDepth: metadata.format.bitsPerSample ? `${metadata.format.bitsPerSample}-bit` : 'N/A', sampleRate: metadata.format.sampleRate ? `${metadata.format.sampleRate / 1000} kHz` : 'N/A' });
-                } catch (err) { otherFiles.push({ name: dirent.name, path: fullPath, reason: 'Could not read metadata.' }); }
-            } else { otherFiles.push({ name: dirent.name, path: fullPath, reason: 'Unsupported file type.' }); }
+    try {
+        const direntsInDir = await fs.readdir(directoryPath, { withFileTypes: true });
+        for (const dirent of direntsInDir) {
+            const fullPath = path.join(directoryPath, dirent.name);
+            if (dirent.isFile()) {
+                const extension = path.extname(dirent.name).toLowerCase();
+                if (allowedExtensions.includes(extension)) {
+                    try {
+                        const metadata = await mm.parseFile(fullPath);
+                        tracks.push({ name: path.parse(dirent.name).name, extension: path.extname(dirent.name), path: fullPath, bitrate: metadata.format.bitrate ? `${Math.round(metadata.format.bitrate / 1000)} kbps` : 'N/A', bitDepth: metadata.format.bitsPerSample ? `${metadata.format.bitsPerSample}-bit` : 'N/A', sampleRate: metadata.format.sampleRate ? `${metadata.format.sampleRate / 1000} kHz` : 'N/A' });
+                    } catch (err) { otherFiles.push({ name: dirent.name, path: fullPath, reason: 'Could not read metadata.' }); }
+                } else { otherFiles.push({ name: dirent.name, path: fullPath, reason: 'Unsupported file type.' }); }
+            }
         }
+    } catch (error) {
+        console.error(`Error reading directory ${directoryPath}:`, error.message);
     }
     return { tracks, otherFiles };
 };
@@ -73,20 +78,11 @@ async function scanDirectory(musicPath) {
         if (!artistDirent.isDirectory()) continue;
 
         const artistPath = path.join(musicPath, artistDirent.name);
-        const artistData = {
-            name: artistDirent.name,
-            path: artistPath,
-            unexpectedItems: [],
-            albums: []
-        };
-
+        const artistData = { name: artistDirent.name, path: artistPath, unexpectedItems: [], albums: [] };
+        
         const artistContents = await fs.readdir(artistPath, { withFileTypes: true });
-        artistContents.forEach(item => {
-            if (item.isFile()) {
-                artistData.unexpectedItems.push({ name: item.name, path: path.join(artistPath, item.name), reason: 'File in artist directory.' });
-            }
-        });
-
+        artistContents.forEach(item => { if (item.isFile()) artistData.unexpectedItems.push({ name: item.name, path: path.join(artistPath, item.name), reason: 'File in artist directory.' }); });
+        
         const albumDirents = artistContents.filter(d => d.isDirectory());
         for (const albumDirent of albumDirents) {
             const albumPath = path.join(artistPath, albumDirent.name);
@@ -94,29 +90,50 @@ async function scanDirectory(musicPath) {
                 title: albumDirent.name,
                 path: albumPath,
                 unexpectedItems: [],
-                discs: []
+                discs: [],
+                foundConvertedFiles: []
             };
-
+            
             const albumContents = await fs.readdir(albumPath, { withFileTypes: true });
+            
             const rootScan = await getTracksInDir(albumPath);
             if (rootScan.tracks.length > 0) {
                 albumData.discs.push({ name: albumData.title, path: albumData.path, isRoot: true, tracks: rootScan.tracks });
             }
             albumData.unexpectedItems.push(...rootScan.otherFiles.map(f => ({ ...f, reason: 'Unsupported file in album directory.' })));
 
-            const discFolders = albumContents.filter(d => d.isDirectory());
-            for (const discFolder of discFolders) {
-                const discPath = path.join(albumPath, discFolder.name);
-                const discContents = await fs.readdir(discPath, { withFileTypes: true });
+            const subfolders = albumContents.filter(d => d.isDirectory());
+            for (const subfolder of subfolders) {
+                const subfolderPath = path.join(albumPath, subfolder.name);
+                
+                if (subfolder.name.toLowerCase() === 'converted') {
+                    const convertedScan = await getTracksInDir(subfolderPath);
+                    for (const convertedTrack of convertedScan.tracks) {
+                        // We need to find the original to link it. We assume the original has a different extension.
+                        // This is a simplified search; a more robust version could check against all known tracks.
+                        const originalFileBase = convertedTrack.name;
+                        const potentialOriginals = rootScan.tracks.filter(t => t.name === originalFileBase);
+                        
+                        if (potentialOriginals.length > 0) {
+                            albumData.foundConvertedFiles.push({
+                                originalPath: potentialOriginals[0].path,
+                                convertedPath: convertedTrack.path
+                            });
+                        }
+                    }
+                    continue; // Skip processing this folder as a regular disc
+                }
+
+                const discContents = await fs.readdir(subfolderPath, { withFileTypes: true });
                 if (discContents.some(d => d.isDirectory())) {
-                    albumData.unexpectedItems.push({ name: discFolder.name, path: discPath, reason: 'Contains nested subdirectories.' });
+                    albumData.unexpectedItems.push({ name: subfolder.name, path: subfolderPath, reason: 'Contains nested subdirectories.' });
                     continue;
                 }
-                const discScan = await getTracksInDir(discPath);
+                const discScan = await getTracksInDir(subfolderPath);
                 if (discScan.tracks.length > 0) {
-                    albumData.discs.push({ name: discFolder.name, path: discPath, isRoot: false, tracks: discScan.tracks });
+                    albumData.discs.push({ name: subfolder.name, path: subfolderPath, isRoot: false, tracks: discScan.tracks });
                 }
-                albumData.unexpectedItems.push(...discScan.otherFiles.map(f => ({ ...f, reason: `Unsupported file in disc folder: ${discFolder.name}` })));
+                albumData.unexpectedItems.push(...discScan.otherFiles.map(f => ({ ...f, reason: `Unsupported file in disc folder: ${subfolder.name}` })));
             }
             
             if (albumData.discs.length > 0 || albumData.unexpectedItems.length > 0) {
@@ -129,6 +146,31 @@ async function scanDirectory(musicPath) {
         }
     }
     return library;
+}
+
+async function persistLibrary(libraryData, directoryId) {
+    for (const artist of libraryData) {
+        const artistId = await db.insertArtist(artist, directoryId);
+        for (const album of artist.albums) {
+            const albumId = await db.insertAlbum(album, artistId);
+            for (const disc of album.discs) {
+                const discId = await db.insertDisc(disc, albumId);
+                for (const track of disc.tracks) {
+                    await db.insertTrack(track, discId);
+                }
+            }
+            // After all original tracks in an album are inserted, log any converted files found.
+            for (const convertedFile of album.foundConvertedFiles) {
+                await db.insertConvertedFile(convertedFile.originalPath, convertedFile.convertedPath);
+            }
+        }
+    }
+}
+
+async function findDirectoryForPath(filePath) {
+    const directories = await db.getDirectoriesOnly();
+    // Find the directory whose path is a parent of the filePath
+    return directories.find(dir => filePath.startsWith(dir.path));
 }
 
 // --- Conversion Logic ---
@@ -158,50 +200,46 @@ async function processQueue() {
             const command = ffmpeg(job.path);
             const { format, bitrate, bitDepth, sampleRate } = job.targetSettings;
 
-            // UPDATED: New comprehensive codec map
-            const codecMap = {
-                'FLAC': 'flac',
-                'ALAC': 'alac',
-                'WAV': 'pcm_s16le', // Default, might be overridden by bit depth
-                'AIFF': 'pcm_s16be', // Default, might be overridden by bit depth
-                'Opus': 'libopus',
-                'Vorbis': 'libvorbis',
-                'AAC': 'aac',
-                'MP3': 'libmp3lame',
-            };
-            
+            const codecMap = { 'FLAC': 'flac', 'ALAC': 'alac', 'WAV': 'pcm_s16le', 'AIFF': 'pcm_s16be', 'Opus': 'libopus', 'Vorbis': 'libvorbis', 'AAC': 'aac', 'MP3': 'libmp3lame' };
             let targetCodec = codecMap[format];
             const targetBitDepth = parseInt(bitDepth, 10);
-
-            // Dynamically change codec for WAV/AIFF based on bit depth
-            if (format === 'WAV') {
-                if (targetBitDepth === 24) targetCodec = 'pcm_s24le';
-            } else if (format === 'AIFF') {
-                if (targetBitDepth === 24) targetCodec = 'pcm_s24be';
-            }
-
-            if (targetCodec) {
-                command.audioCodec(targetCodec);
-            }
+            if (format === 'WAV') { if (targetBitDepth === 24) targetCodec = 'pcm_s24le'; } 
+            else if (format === 'AIFF') { if (targetBitDepth === 24) targetCodec = 'pcm_s24be'; }
+            if (targetCodec) { command.audioCodec(targetCodec); }
 
             const targetBitrate = parseInt(bitrate, 10);
-            if (['libmp3lame', 'aac', 'libopus', 'libvorbis'].includes(targetCodec)) {
-                if (!isNaN(targetBitrate)) {
-                    command.audioBitrate(`${targetBitrate}k`);
-                }
-            }
+            if (['libmp3lame', 'aac', 'libopus', 'libvorbis'].includes(targetCodec)) { if (!isNaN(targetBitrate)) { command.audioBitrate(`${targetBitrate}k`); } }
 
             const targetSampleRate = parseFloat(sampleRate) * 1000;
-            if (!isNaN(targetSampleRate)) {
-                command.audioFrequency(targetSampleRate);
-            }
+            if (!isNaN(targetSampleRate)) { command.audioFrequency(targetSampleRate); }
 
             command
                 .on('progress', (progress) => {
                     const percent = progress.percent ? progress.percent.toFixed(2) : 0;
                     broadcast({ type: 'progress', path: job.path, percent });
                 })
-                .on('end', () => { job.status = 'Complete'; broadcast({ type: 'status_update', path: job.path, status: 'Complete' }); resolve(); })
+                .on('end', async () => {
+                    job.status = 'Complete';
+                    broadcast({ type: 'status_update', path: job.path, status: 'Complete' });
+                    
+                    try {
+                        console.log(`Conversion for ${job.name} complete. Triggering library re-scan.`);
+                        const parentDirectory = await findDirectoryForPath(job.path);
+                        if (parentDirectory) {
+                            await db.clearDirectoryData(parentDirectory.id);
+                            const libraryData = await scanDirectory(parentDirectory.path);
+                            await persistLibrary(libraryData, parentDirectory.id);
+                            const updatedLibrary = await db.getFullLibrary();
+                            // Broadcast the entire new library to all clients
+                            broadcast({ type: 'library_update', library: updatedLibrary });
+                            console.log('Library re-scan and broadcast complete.');
+                        }
+                    } catch (scanError) {
+                        console.error("Failed to re-scan library after conversion:", scanError);
+                    }
+
+                    resolve();
+                })
                 .on('error', (err) => { job.status = 'Error'; broadcast({ type: 'status_update', path: job.path, status: 'Error', reason: err.message }); reject(err); })
                 .save(outputPath);
         });
@@ -289,28 +327,12 @@ app.post('/api/browse', async (req, res) => {
 app.post('/api/scan', async (req, res) => {
     const { directoryId, path: musicPath } = req.body;
     if (!directoryId || !musicPath) return res.status(400).json({ error: 'Directory ID and path are required.' });
-
     try {
         await db.clearDirectoryData(directoryId);
-        
         const libraryData = await scanDirectory(musicPath);
-
-        for (const artist of libraryData) {
-            const artistId = await db.insertArtist(artist, directoryId);
-            for (const album of artist.albums) {
-                const albumId = await db.insertAlbum(album, artistId);
-                for (const disc of album.discs) {
-                    const discId = await db.insertDisc(disc, albumId);
-                    for (const track of disc.tracks) {
-                        await db.insertTrack(track, discId);
-                    }
-                }
-            }
-        }
-        
+        await persistLibrary(libraryData, directoryId);
         const updatedLibrary = await db.getFullLibrary();
         res.json(updatedLibrary);
-
     } catch (error) {
         console.error("Scan failed with error:", error);
         res.status(500).json({ error: error.message });
@@ -319,14 +341,18 @@ app.post('/api/scan', async (req, res) => {
 
 // --- Converter Endpoints ---
 app.post('/api/convert/add', (req, res) => {
+    console.log('[BACKEND] Received POST request on /api/convert/add');
     const { track, qualitySettings } = req.body;
     if (!track || !qualitySettings) {
+        console.log('[BACKEND] Add failed: Missing track or qualitySettings.');
         return res.status(400).json({ error: 'Track and quality settings are required.' });
     }
     if (conversionQueue.some(item => item.path === track.path)) {
+        console.log('[BACKEND] Add failed: Track already in queue.');
         return res.status(409).json({ message: 'Track is already in the queue.' });
     }
-    conversionQueue.push({
+    
+    const newQueueItem = {
         path: track.path,
         name: `${track.name}${track.extension}`,
         originalQuality: `${track.bitDepth}, ${track.sampleRate}`,
@@ -338,12 +364,17 @@ app.post('/api/convert/add', (req, res) => {
             bitDepth: qualitySettings.bitDepth,
             sampleRate: qualitySettings.sampleRate
         }
-    });
+    };
+
+    conversionQueue.push(newQueueItem);
+    console.log(`[BACKEND] Added to queue. New queue size: ${conversionQueue.length}`);
+    
     broadcast({ type: 'queue_update', queue: conversionQueue });
     res.status(200).json({ message: 'Track added to queue.' });
 });
 
 app.post('/api/convert/start', (req, res) => {
+    console.log('[BACKEND] Received request to start conversion queue.');
     if (isConverting) {
         return res.status(400).json({ message: 'Conversion is already in progress.' });
     }
@@ -352,6 +383,7 @@ app.post('/api/convert/start', (req, res) => {
 });
 
 app.post('/api/convert/clear', (req, res) => {
+    console.log('[BACKEND] Received request to clear completed items.');
     conversionQueue = conversionQueue.filter(item => item.status !== 'Complete' && item.status !== 'Error');
     broadcast({ type: 'queue_update', queue: conversionQueue });
     res.status(200).json({ message: 'Cleared completed items from queue.' });

@@ -35,6 +35,35 @@ body {
   overflow-y: auto;
 }
 
+/* --- THE FIX: NEW UNIFIED LAYOUT LOGIC --- */
+
+/* This makes the entire layout take up the full screen height when on the converter page */
+.layout-converter {
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* This turns the main content area into a flex container to manage its children */
+.layout-converter .main-content {
+    display: flex;
+    flex-direction: column;
+}
+
+/* This makes the header and footer take only the space they need */
+.layout-converter .page-header,
+.layout-converter .converter-bottom-bar {
+    flex-shrink: 0;
+}
+
+/* This makes the queue table grow to fill all remaining vertical space */
+.layout-converter .queue-table-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    min-height: 0; /* A flexbox trick to allow it to shrink and scroll correctly */
+}
+/* --- END OF FIX --- */
+
+
 .sidebar ul {
   list-style: none;
   padding: 0;
@@ -328,7 +357,6 @@ body {
 .track-table {
     width: 100%;
     border-collapse: collapse;
-    /* margin-top: 1rem; */
     table-layout: fixed;
 }
 .track-table th, .track-table td {
@@ -362,7 +390,6 @@ body {
     width: 3%;
     text-align: right;
 }
-
 .settings-section {
     max-width: 900px;
     margin-left: auto;
@@ -494,15 +521,11 @@ body {
     margin-right: auto;
     margin-bottom: 3rem;
 }
-
-/* This rule targets the clickable header for the whole section */
 .settings-section > .collapsible-header {
     cursor: pointer;
-    /* border-bottom: 1px solid var(--border-color); */
     padding-bottom: 0.75rem;
     margin-bottom: 1.5rem;
 }
-
 .settings-section h2 {
     text-align: left;
     color: var(--text-color);
@@ -511,17 +534,14 @@ body {
     margin: 0;
     flex-grow: 1;
 }
-
 .quality-settings-container, .directory-settings-container {
     background-color: var(--surface-color);
     border-radius: 12px;
     padding: 1.5rem;
 }
-
 .quality-settings-container {
     min-height: 50px;
 }
-
 .directory-settings-container .add-directory-controls {
     background: none;
     box-shadow: none;
@@ -529,21 +549,18 @@ body {
     margin: 0 0 1rem 0;
     max-width: none;
 }
-
 .filter-section {
     max-width: 900px;
     margin-left: auto;
     margin-right: auto;
     margin-bottom: 2rem;
 }
-
 .filter-section > .collapsible-header {
     cursor: pointer;
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 0.75rem;
     margin-bottom: 1.5rem;
 }
-
 .filter-section h2 {
     text-align: left;
     color: var(--text-color);
@@ -552,7 +569,6 @@ body {
     margin: 0;
     flex-grow: 1;
 }
-
 .filter-options {
     background-color: var(--surface-color);
     border-radius: 12px;
@@ -561,19 +577,15 @@ body {
     justify-content: center;
     gap: 2rem;
 }
-
 .filter-group {
     position: relative;
 }
-
 .filter-checkbox-input {
-    /* Hide the actual checkbox input completely */
     position: absolute;
     opacity: 0;
     width: 0;
     height: 0;
 }
-
 .filter-button-label {
     display: flex;
     align-items: center;
@@ -582,37 +594,27 @@ body {
     border-radius: 20px;
     cursor: pointer;
     transition: background-color 0.2s;
-    /* Default (unchecked) state */
     background-color: var(--button-secondary-bg);
     color: var(--text-secondary-color);
     border: 1px solid var(--border-color);
 }
-
 .filter-button-label svg {
     width: 16px;
     height: 16px;
     transition: transform 0.2s;
-    /* Icon is hidden by default */
     transform: scale(0);
 }
-
-/* Styles for when the checkbox is checked */
 .filter-checkbox-input:checked + .filter-button-label {
     background-color: var(--primary-color);
     color: white;
     border-color: var(--primary-color);
 }
-
 .filter-checkbox-input:checked + .filter-button-label svg {
-    /* Show the icon when checked */
     transform: scale(1);
 }
-
 .main-content p {
   text-align: center;
 }
-
-/* --- Styles for Converter Page --- */
 .progress-section, .queue-controls {
     background-color: var(--surface-color);
     border-radius: 12px;
@@ -623,25 +625,21 @@ body {
     border-radius: 12px;
     padding: 0.25rem 1rem;
 }
-
 .target-quality-item {
     display: flex;
     justify-content: space-between;
     font-size: 0.9rem;
     color: var(--text-secondary-color);
 }
-
 .progress-bar-container {
     margin-bottom: 1rem;
 }
-
 .progress-bar-container label {
     display: block;
     margin-bottom: 0.5rem;
     font-size: 0.9rem;
     color: var(--text-secondary-color);
 }
-
 .progress-bar-background {
     width: 100%;
     height: 10px;
@@ -649,88 +647,56 @@ body {
     border-radius: 5px;
     overflow: hidden;
 }
-
 .progress-bar-foreground {
     height: 100%;
     background-color: var(--primary-color);
     border-radius: 5px;
     transition: width 0.3s ease;
 }
-
 .queue-table-container {
     background-color: var(--surface-color);
     border-radius: 12px;
     padding: 1rem;
 }
-
 .queue-table {
     width: 100%;
     border-collapse: collapse;
 }
-
 .queue-table th, .queue-table td {
     padding: 0.75rem;
     text-align: left;
     border-bottom: 1px solid var(--border-color);
 }
-
 .queue-table th {
     font-size: 0.9rem;
     color: var(--text-secondary-color);
     font-weight: normal;
 }
-
 .status-badge {
     padding: 0.25rem 0.5rem;
     border-radius: 10px;
     font-size: 0.8rem;
     font-weight: bold;
 }
-
 .status-pending {
     background-color: #4a4a4a;
     color: #ccc;
 }
-
 .status-converting {
     background-color: #00529b;
     color: white;
 }
-
-.converter-page-layout {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-    min-height: 0;
-}
-
-.converter-page-layout > .page-header {
-    flex-shrink: 0; /* Prevent header from shrinking */
-}
-
-.converter-page-layout .queue-table-container {
-    flex-grow: 1; /* Take remaining space */
-    overflow-y: auto; /* Allow scrolling when content overflows */
-    background-color: var(--surface-color);
-    border-radius: 12px;
-    padding: 1rem;
-    min-height: 0; /* Important: allows flex item to shrink below content size */
-    color-scheme: light dark;
-}
-
 .converter-bottom-bar {
-    flex-shrink: 0; /* Prevent the bottom bar from shrinking */
+    flex-shrink: 0;
     display: flex;
     gap: 2rem;
     margin-top: 2rem;
-    align-items: stretch; /* Make children have the same height */
+    align-items: stretch;
 }
-
 .converter-bottom-bar .progress-section {
     flex-grow: 1;
-    margin-bottom: 0; /* Remove default margin */
+    margin-bottom: 0;
 }
-
 .converter-controls-section {
     width: 280px;
     flex-shrink: 0;
@@ -740,36 +706,47 @@ body {
     border-radius: 12px;
     justify-content: center;
 }
-
 .queue-controls {
     display: flex;
-    flex-direction: row; /* Horizontal layout */
+    flex-direction: row;
     gap: 1rem;
-    justify-content: center; /* Center the group of buttons */
-    /* margin-top: auto; Push the controls to the bottom of the sidebar */
+    justify-content: center;
 }
-
 .queue-controls .button-icon {
-    flex-grow: 1; /* Make buttons share space equally */
+    flex-grow: 1;
 }
-
 .layout-converter {
   height: 100vh;
   overflow: hidden;
 }
-
 .layout-converter .main-content {
   display: flex;
   flex-direction: column;
 }
-
+.layout-converter .page-header {
+  flex-shrink: 0;
+}
+.layout-converter .queue-table-container {
+  flex-grow: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+.layout-converter .converter-bottom-bar {
+  flex-shrink: 0;
+}
 .button-convert {
     background-color: #2f5d8c;
 }
-
 .button-convert:hover:not(:disabled) {
     background-color: #3f7ab7;
 }
+
+.layout-converter .page-header {
+  align-self: center;
+  width: 100%; /* Ensures the max-width property is respected correctly */
+}
+
+
 
 @media (max-width: 650px) {
   .add-directory-controls {

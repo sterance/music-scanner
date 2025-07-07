@@ -58,6 +58,9 @@ function App() {
                     )
                 );
                 break;
+            case 'library_update':
+                setLibrary(data.library);
+                break;
             default:
                 break;
         }
@@ -145,11 +148,14 @@ function App() {
   const handleScanAll = async () => { for (const dir of directories) { await handleScan(dir.id); } };
 
   const handleAddToQueue = async (track) => {
+    console.log('[FRONTEND] handleAddToQueue called with track:', track);
     try {
+        console.log('[FRONTEND] Sending POST request to /api/convert/add...');
         await axios.post('http://localhost:3001/api/convert/add', { track, qualitySettings });
+        console.log('[FRONTEND] POST request successful.');
     } catch (error) {
         const errorMsg = error.response?.data?.message || 'Failed to add track to queue.';
-        console.error(errorMsg);
+        console.error('[FRONTEND] Error adding track to queue:', errorMsg);
         alert(errorMsg);
     }
   };
@@ -158,30 +164,9 @@ function App() {
     <div className={`main-layout ${currentPage === 'converter' ? 'layout-converter' : ''}`}>
         <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
         <main className="main-content">
-            {currentPage === 'library' && 
-                <LibraryPage 
-                    library={library}
-                    qualitySettings={qualitySettings}
-                    libraryFilters={libraryFilters}
-                    setLibraryFilters={setLibraryFilters}
-                    handleScanAll={handleScanAll}
-                    handleAddToQueue={handleAddToQueue}
-                />}
-            {currentPage === 'converter' && 
-                <ConverterPage 
-                    qualitySettings={qualitySettings} 
-                    conversionQueue={conversionQueue} 
-                    setConversionQueue={setConversionQueue} 
-                />}
-            {currentPage === 'settings' && 
-                <SettingsPage 
-                    directories={directories}
-                    handleAddDirectory={handleAddDirectory}
-                    handleRemoveDirectory={handleRemoveDirectory}
-                    handleScan={handleScan}
-                    qualitySettings={qualitySettings}
-                    setQualitySettings={setQualitySettings}
-                />}
+            {currentPage === 'library' && <LibraryPage library={library} qualitySettings={qualitySettings} libraryFilters={libraryFilters} setLibraryFilters={setLibraryFilters} handleScanAll={handleScanAll} handleAddToQueue={handleAddToQueue} />}
+            {currentPage === 'converter' && <ConverterPage qualitySettings={qualitySettings} conversionQueue={conversionQueue} setConversionQueue={setConversionQueue} />}
+            {currentPage === 'settings' && <SettingsPage directories={directories} handleAddDirectory={handleAddDirectory} handleRemoveDirectory={handleRemoveDirectory} handleScan={handleScan} qualitySettings={qualitySettings} setQualitySettings={setQualitySettings} />}
         </main>
     </div>
   );

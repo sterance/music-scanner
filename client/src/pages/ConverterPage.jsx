@@ -61,7 +61,6 @@ function ConverterPage({ qualitySettings, conversionQueue, setConversionQueue })
 
     const handleClearCompleted = async () => {
         try {
-            // Call the new API endpoint to clear the server's queue
             await axios.post('http://localhost:3001/api/convert/clear');
         } catch (error) {
             console.error("Failed to clear queue:", error);
@@ -73,7 +72,7 @@ function ConverterPage({ qualitySettings, conversionQueue, setConversionQueue })
     const hasPending = conversionQueue.some(item => item.status === 'Pending');
 
     return (
-        <div className="converter-page-layout">
+        <>
             <header className="page-header">
                 <h1>Converter</h1>
             </header>
@@ -85,19 +84,13 @@ function ConverterPage({ qualitySettings, conversionQueue, setConversionQueue })
                 <div className="converter-controls-section">
                     <TargetQualityDisplay settings={qualitySettings} />
                      <div className="queue-controls">
-                        <button className="button button-primary button-icon" title="Start Queue" onClick={handleStartQueue} disabled={!hasPending}>
-                            <PlayIcon />
-                        </button>
-                        <button className="button button-secondary button-icon" title="Pause Queue">
-                            <PauseIcon />
-                        </button>
-                        <button className="button button-secondary button-icon" title="Clear Completed" onClick={handleClearCompleted}>
-                            <ClearIcon />
-                        </button>
+                        <button className="button button-primary button-icon" title="Start Queue" onClick={handleStartQueue} disabled={!hasPending}><PlayIcon /></button>
+                        <button className="button button-secondary button-icon" title="Pause Queue"><PauseIcon /></button>
+                        <button className="button button-secondary button-icon" title="Clear Completed" onClick={handleClearCompleted}><ClearIcon /></button>
                     </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 }
 
