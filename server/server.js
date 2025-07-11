@@ -12,13 +12,11 @@ const ffmpegStatic = require('ffmpeg-static');
 
 // --- Server and WebSocket Setup ---
 const app = express();
-const server = http.createServer(app); // Create an HTTP server from the Express app
-const wss = new WebSocket.Server({ server }); // Attach the WebSocket server
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
 const PORT = 3001;
 
-// Tell fluent-ffmpeg where to find the binary provided by ffmpeg-static
 ffmpeg.setFfmpegPath(ffmpegStatic);
-
 app.use(cors());
 app.use(express.json());
 db.initializeDatabase();
@@ -26,6 +24,7 @@ db.initializeDatabase();
 // --- In-Memory Conversion Queue & State ---
 let conversionQueue = [];
 let isConverting = false;
+let isPaused = false;
 
 // --- WebSocket Logic ---
 wss.on('connection', ws => {
@@ -175,11 +174,31 @@ async function findDirectoryForPath(filePath) {
 
 // --- Conversion Logic ---
 async function processQueue() {
-    if (isConverting) return;
+    if (isConverting || isPaused) return;
+
     const job = conversionQueue.find(item => item.status === 'Pending');
     if (!job) {
         console.log('Conversion queue finished or no pending jobs.');
         isConverting = false;
+        
+        const firstCompleted = conversionQueue.find(item => item.status === 'Complete');
+        if (firstCompleted) {
+            try {
+                console.log(`Queue finished. Triggering final library re-scan.`);
+                const parentDirectory = await findDirectoryForPath(firstCompleted.path);
+                if (parentDirectory) {
+                    await db.clearDirectoryData(parentDirectory.id);
+                    const libraryData = await scanDirectory(parentDirectory.path);
+                    await persistLibrary(libraryData, parentDirectory.id);
+                    const updatedLibrary = await db.getFullLibrary();
+                    broadcast({ type: 'library_update', library: updatedLibrary });
+                    console.log('Final library re-scan and broadcast complete.');
+                }
+            } catch (scanError) {
+                console.error("Failed to re-scan library after conversion:", scanError);
+            }
+        }
+
         broadcast({ type: 'queue_update', queue: conversionQueue });
         return;
     }
@@ -203,9 +222,19 @@ async function processQueue() {
             const codecMap = { 'FLAC': 'flac', 'ALAC': 'alac', 'WAV': 'pcm_s16le', 'AIFF': 'pcm_s16be', 'Opus': 'libopus', 'Vorbis': 'libvorbis', 'AAC': 'aac', 'MP3': 'libmp3lame' };
             let targetCodec = codecMap[format];
             const targetBitDepth = parseInt(bitDepth, 10);
-            if (format === 'WAV') { if (targetBitDepth === 24) targetCodec = 'pcm_s24le'; } 
-            else if (format === 'AIFF') { if (targetBitDepth === 24) targetCodec = 'pcm_s24be'; }
+            if (format === 'WAV') {
+                if (targetBitDepth === 24) targetCodec = 'pcm_s24le';
+                else targetCodec = 'pcm_s16le';
+            } else if (format === 'AIFF') {
+                if (targetBitDepth === 24) targetCodec = 'pcm_s24be';
+                else targetCodec = 'pcm_s16be';
+            }
             if (targetCodec) { command.audioCodec(targetCodec); }
+
+            if (targetCodec === 'flac') {
+                if (targetBitDepth === 16) command.addOption('-sample_fmt', 's16');
+                if (targetBitDepth === 24) command.addOption('-sample_fmt', 's32');
+            }
 
             const targetBitrate = parseInt(bitrate, 10);
             if (['libmp3lame', 'aac', 'libopus', 'libvorbis'].includes(targetCodec)) { if (!isNaN(targetBitrate)) { command.audioBitrate(`${targetBitrate}k`); } }
@@ -380,6 +409,19 @@ app.post('/api/convert/start', (req, res) => {
     }
     processQueue();
     res.status(200).json({ message: 'Conversion queue started.' });
+});
+
+app.post('/api/convert/pause', (req, res) => {
+    isPaused = !isPaused;
+    console.log(`Conversion queue ${isPaused ? 'paused' : 'resumed'}.`);
+    broadcast({ type: 'pause_update', isPaused: isPaused });
+    
+    // If resuming, try to process the next item
+    if (!isPaused) {
+        processQueue();
+    }
+
+    res.status(200).json({ message: `Queue ${isPaused ? 'paused' : 'resumed'}.` });
 });
 
 app.post('/api/convert/clear', (req, res) => {
