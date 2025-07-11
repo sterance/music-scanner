@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import axios from 'axios';
-import { ChevronRightIcon, EditIcon } from './Icons';
+import { ChevronRightIcon, EditIcon, AddAllIcon } from './Icons';
 import Track from './Track';
 import UnexpectedItems from './UnexpectedItems';
 import { compareTrackToTarget } from '../utils/quality';
+import { toast } from 'react-hot-toast';
 
 function Album({ album, onRenameSuccess, qualitySettings, handleAddToQueue }) {
     const [isCollapsed, setIsCollapsed] = useState(true);
@@ -104,6 +105,24 @@ function DiscSection({ disc, showDiscHeader, onRenameSuccess, qualitySettings, h
     const handleDiscCancel = (e) => { e.stopPropagation(); setIsEditing(false); setNewName(disc.name); };
     const handleDiscKeyDown = (e) => { if (e.key === 'Escape') { handleDiscCancel(e); } };
 
+    const handleAddDiscToQueue = async () => {
+        const tracksToAdd = disc.tracks.filter(track => 
+            compareTrackToTarget(track, qualitySettings) === 'above'
+        );
+
+        if (tracksToAdd.length === 0) return;
+        const addPromises = tracksToAdd.map(track => handleAddToQueue(track));
+        
+        try {
+            // Wait for all requests to complete.
+            await Promise.all(addPromises);
+            toast.success(`${tracksToAdd.length} files added to queue.`);
+        } catch (error) {
+            // If any of the requests fail, show a generic error.
+            toast.error(`Error: ${error.message}`);
+        }
+    };
+
     return (
         <div className="disc-section">
             {showDiscHeader && (
@@ -125,7 +144,17 @@ function DiscSection({ disc, showDiscHeader, onRenameSuccess, qualitySettings, h
             <table className="track-table">
                 <thead>
                     <tr>
-                        {showConvertColumn && <th className="col-convert"></th>}
+                        {showConvertColumn && (
+                            <th className="col-convert">
+                                <button 
+                                    className="button button-convert button-edit" 
+                                    title="Add Disc to Conversion Queue"
+                                    onClick={handleAddDiscToQueue}
+                                >
+                                    <AddAllIcon />
+                                </button>
+                            </th>
+                        )}
                         <th className="col-name">Track Title</th>
                         <th className="col-type">Type</th>
                         <th className="col-bitdepth">{hasBitDepth ? 'Bit Depth' : 'Bit Rate'}</th>

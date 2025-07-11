@@ -35,8 +35,6 @@ body {
   overflow-y: auto;
 }
 
-/* --- THE FIX: NEW UNIFIED LAYOUT LOGIC --- */
-
 /* This makes the entire layout take up the full screen height when on the converter page */
 .layout-converter {
     height: 100vh;
@@ -61,7 +59,11 @@ body {
     overflow-y: auto;
     min-height: 0; /* A flexbox trick to allow it to shrink and scroll correctly */
 }
-/* --- END OF FIX --- */
+.converter-page-layout {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
 
 
 .sidebar ul {
@@ -170,7 +172,7 @@ body {
     height: 18px;
 }
 .button-edit {
-    padding: 0.3rem;
+    padding: 0.25rem;
     background-color: var(--button-secondary-bg);
 }
 .button-edit svg {
@@ -377,7 +379,7 @@ body {
     text-align: center;
 }
 .track-table .col-name {
-    width: 67%;
+    width: 70%;
 }
 .track-table .col-type,
 .track-table .col-bitdepth,
@@ -388,8 +390,19 @@ body {
 }
 .track-table .col-actions {
     width: 3%;
-    text-align: right;
+    text-align: center;
+    vertical-align: middle;
 }
+.track-table th .button-edit {
+  padding: 0.4rem;
+}
+
+.track-table th .button-edit svg {
+  width: 14px;
+  height: 14px;
+}
+
+
 .settings-section {
     max-width: 900px;
     margin-left: auto;
@@ -742,10 +755,25 @@ body {
 }
 
 .layout-converter .page-header {
-  align-self: center;
-  width: 100%; /* Ensures the max-width property is respected correctly */
+    align-self: center;
+    width: 100%;
 }
 
+#queue-table-header-track {
+    width: 55%;
+}
+#queue-table-header-original {
+    width: 15%;
+}
+#queue-table-header-target {
+    width: 15%;
+}
+#queue-table-header-status {
+    width: 10%;
+}
+#queue-table-header-actions {
+    width: 5%;
+}
 
 
 @media (max-width: 650px) {

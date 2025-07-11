@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './App.css';
+import { Toaster } from 'react-hot-toast';
 
 import Sidebar from './components/Sidebar';
 import LibraryPage from './pages/LibraryPage';
@@ -27,6 +28,7 @@ function App() {
   const [qualitySettings, setQualitySettings] = useState(defaultQualitySettings);
   const [libraryFilters, setLibraryFilters] = useState(defaultLibraryFilters);
   const [conversionQueue, setConversionQueue] = useState([]);
+  const [isQueuePaused, setIsQueuePaused] = useState(false);
 
   // --- WebSocket Connection ---
   useEffect(() => {
@@ -60,6 +62,9 @@ function App() {
                 break;
             case 'library_update':
                 setLibrary(data.library);
+                break;
+            case 'pause_update':
+                setIsQueuePaused(data.isPaused);
                 break;
             default:
                 break;
@@ -148,25 +153,53 @@ function App() {
   const handleScanAll = async () => { for (const dir of directories) { await handleScan(dir.id); } };
 
   const handleAddToQueue = async (track) => {
-    console.log('[FRONTEND] handleAddToQueue called with track:', track);
     try {
-        console.log('[FRONTEND] Sending POST request to /api/convert/add...');
         await axios.post('http://localhost:3001/api/convert/add', { track, qualitySettings });
-        console.log('[FRONTEND] POST request successful.');
     } catch (error) {
         const errorMsg = error.response?.data?.message || 'Failed to add track to queue.';
-        console.error('[FRONTEND] Error adding track to queue:', errorMsg);
-        alert(errorMsg);
+        console.error(errorMsg);
+        throw new Error(errorMsg);
     }
   };
 
   return (
     <div className={`main-layout ${currentPage === 'converter' ? 'layout-converter' : ''}`}>
+        <Toaster 
+            position="bottom-right"
+            toastOptions={{
+                style: {
+                    background: '#333',
+                    color: '#fff',
+                },
+            }}
+        />
         <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
         <main className="main-content">
-            {currentPage === 'library' && <LibraryPage library={library} qualitySettings={qualitySettings} libraryFilters={libraryFilters} setLibraryFilters={setLibraryFilters} handleScanAll={handleScanAll} handleAddToQueue={handleAddToQueue} />}
-            {currentPage === 'converter' && <ConverterPage qualitySettings={qualitySettings} conversionQueue={conversionQueue} setConversionQueue={setConversionQueue} />}
-            {currentPage === 'settings' && <SettingsPage directories={directories} handleAddDirectory={handleAddDirectory} handleRemoveDirectory={handleRemoveDirectory} handleScan={handleScan} qualitySettings={qualitySettings} setQualitySettings={setQualitySettings} />}
+            {currentPage === 'library' && 
+                <LibraryPage
+                    library={library}
+                    qualitySettings={qualitySettings}
+                    libraryFilters={libraryFilters}
+                    setLibraryFilters={setLibraryFilters}
+                    handleScanAll={handleScanAll}
+                    handleAddToQueue={handleAddToQueue}
+                />}
+            {currentPage === 'converter' &&
+                <ConverterPage
+                    qualitySettings={qualitySettings}
+                    conversionQueue={conversionQueue}
+                    setConversionQueue={setConversionQueue}
+                    isQueuePaused={isQueuePaused}
+                />}
+            {currentPage === 'settings' &&
+                <SettingsPage
+                    directories={directories}
+                    handleAddDirectory={handleAddDirectory}
+                    handleRemoveDirectory={handleRemoveDirectory}
+                    handleScan={handleScan}
+                    qualitySettings={qualitySettings}
+                    setQualitySettings={setQualitySettings}
+                />}
         </main>
     </div>
   );

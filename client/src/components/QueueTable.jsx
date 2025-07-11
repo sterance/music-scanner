@@ -7,11 +7,11 @@ function QueueTable({ queue, setConversionQueue }) {
             <table className="queue-table">
                 <thead>
                     <tr>
-                        <th>Track</th>
-                        <th>Original</th>
-                        <th>Target</th>
-                        <th>Status</th>
-                        <th className="col-actions"></th>
+                        <th id='queue-table-header-track'>Track</th>
+                        <th id='queue-table-header-original'>Original</th>
+                        <th id='queue-table-header-target'>Target</th>
+                        <th id='queue-table-header-status'>Status</th>
+                        <th id='queue-table-header-actions' className="col-actions"></th>
                     </tr>
                 </thead>
                 <tbody>

@@ -48,7 +48,7 @@ function ProgressSection({ currentlyConverting, queue }) {
     );
 }
 
-function ConverterPage({ qualitySettings, conversionQueue, setConversionQueue }) {
+function ConverterPage({ qualitySettings, conversionQueue, setConversionQueue, isQueuePaused }) {
 
     const handleStartQueue = async () => {
         try {
@@ -68,29 +68,63 @@ function ConverterPage({ qualitySettings, conversionQueue, setConversionQueue })
         }
     };
 
+    const handlePauseToggle = async () => {
+        try {
+            await axios.post('http://localhost:3001/api/convert/pause');
+        } catch (error) {
+            console.error("Failed to toggle pause:", error);
+            alert("Error: Could not toggle pause state.");
+        }
+    };
+
     const currentlyConverting = conversionQueue.find(item => item.status === 'Converting');
     const hasPending = conversionQueue.some(item => item.status === 'Pending');
 
     return (
-        <>
+        <div className="converter-page-layout">
             <header className="page-header">
                 <h1>Converter</h1>
             </header>
 
-            <QueueTable queue={conversionQueue} setConversionQueue={setConversionQueue} />
+            <QueueTable
+                queue={conversionQueue}
+                setConversionQueue={setConversionQueue}
+            />
 
             <div className="converter-bottom-bar">
-                <ProgressSection currentlyConverting={currentlyConverting} queue={conversionQueue} />
+                <ProgressSection
+                    currentlyConverting={currentlyConverting}
+                    queue={conversionQueue}
+                />
                 <div className="converter-controls-section">
                     <TargetQualityDisplay settings={qualitySettings} />
                      <div className="queue-controls">
-                        <button className="button button-primary button-icon" title="Start Queue" onClick={handleStartQueue} disabled={!hasPending}><PlayIcon /></button>
-                        <button className="button button-secondary button-icon" title="Pause Queue"><PauseIcon /></button>
-                        <button className="button button-secondary button-icon" title="Clear Completed" onClick={handleClearCompleted}><ClearIcon /></button>
+                        <button
+                            className="button button-primary button-icon"
+                            title="Start Queue"
+                            onClick={handleStartQueue}
+                            disabled={!hasPending || isQueuePaused}
+                        >
+                            <PlayIcon />
+                        </button>
+                        <button
+                            className="button button-secondary button-icon"
+                            title={isQueuePaused ? "Resume Queue" : "Pause Queue"}
+                            onClick={handlePauseToggle}
+                        >
+                            {isQueuePaused ? <PlayIcon /> : <PauseIcon />}
+                        </button>
+                        <button
+                            className="button button-secondary button-icon"
+                            title="Clear Completed"
+                            onClick={handleClearCompleted}
+                        >
+                            <ClearIcon />
+                        </button>
                     </div>
                 </div>
             </div>
-        </>
+        </div>
     );
 }
 

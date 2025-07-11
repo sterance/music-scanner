@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { EditIcon } from './Icons';
+import { EditIcon, AddToQueueIcon } from './Icons';
 import { compareTrackToTarget } from '../utils/quality';
+import { toast } from 'react-hot-toast';
 
 function Track({ track, onRenameSuccess, displayBitDepth, qualitySettings, handleAddToQueue, showConvertColumn }) {
     const [isEditing, setIsEditing] = useState(false);
@@ -35,16 +36,26 @@ function Track({ track, onRenameSuccess, displayBitDepth, qualitySettings, handl
     const qualityStatus = compareTrackToTarget(track, qualitySettings);
     const isAboveTarget = qualityStatus === 'above';
 
+    const handleAddClick = async () => {
+        try {
+            await handleAddToQueue(track);
+            toast.success(`${track.name}${track.extension} added to queue.`);
+        } catch (error) {
+            toast.error(`Error: ${error.message}`);
+        }
+    };
+
     return (
         <tr>
             {showConvertColumn && (
                 <td className="col-convert">
                     {isAboveTarget && !isEditing && (
-                        <button 
-                            className="button button-convert button-edit" 
+                        <button
+                            className="button button-convert button-edit"
                             title="Add to Conversion Queue"
-                            onClick={() => handleAddToQueue(track)}>
-                            &#x2193; 
+                            onClick={handleAddClick}
+                        >
+                            <AddToQueueIcon />
                         </button>
                     )}
                 </td>
@@ -53,9 +64,26 @@ function Track({ track, onRenameSuccess, displayBitDepth, qualitySettings, handl
             <td className="col-name">
                 {isEditing ? (
                     <form onSubmit={handleRename} className="inline-edit-form">
-                        <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} onKeyDown={handleKeyDown} autoFocus onClick={(e) => e.stopPropagation()} />
-                        <button type="button" className="button button-secondary" onClick={handleCancel}>Cancel</button>
-                        <button type="submit" className="button button-primary">Save</button>
+                        <input
+                            type="text"
+                            value={newName}
+                            onChange={(e) => setNewName(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            autoFocus onClick={(e) => e.stopPropagation()}
+                        />
+                        <button
+                            type="button"
+                            className="button button-secondary"
+                            onClick={handleCancel}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            className="button button-primary"
+                        >
+                            Save
+                        </button>
                     </form>
                 ) : (
                     <span>{track.name}</span>
@@ -66,7 +94,11 @@ function Track({ track, onRenameSuccess, displayBitDepth, qualitySettings, handl
             <td className="col-srate">{track.sampleRate}</td>
             <td className="col-actions">
                 {!isEditing && (
-                    <button className="button button-edit" title="Rename Track" onClick={() => setIsEditing(true)}>
+                    <button
+                        className="button button-edit"
+                        title="Rename Track"
+                        onClick={() => setIsEditing(true)}
+                    >
                         <EditIcon />
                     </button>
                 )}
