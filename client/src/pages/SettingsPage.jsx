@@ -5,8 +5,8 @@ import { ChevronRightIcon } from '../components/Icons';
 
 function SettingsPage({ directories, handleAddDirectory, handleRemoveDirectory, handleScan, qualitySettings, setQualitySettings }) {
     
-    const [isDirectoriesCollapsed, setIsDirectoriesCollapsed] = useState(false);
-    const [isQualityCollapsed, setIsQualityCollapsed] = useState(false);
+    const [isDirectoriesCollapsed, setIsDirectoriesCollapsed] = useState(true);
+    const [isQualityCollapsed, setIsQualityCollapsed] = useState(true);
 
     return (
         <>
@@ -17,7 +17,7 @@ function SettingsPage({ directories, handleAddDirectory, handleRemoveDirectory, 
             <div className="settings-section">
                 <div className="collapsible-header" onClick={() => setIsDirectoriesCollapsed(!isDirectoriesCollapsed)}>
                     <ChevronRightIcon className={isDirectoriesCollapsed ? '' : 'expanded'} />
-                    <h2>Directories</h2>
+                    <h2>Library Directories</h2>
                 </div>
 
                 {!isDirectoriesCollapsed && (
@@ -33,7 +33,7 @@ function SettingsPage({ directories, handleAddDirectory, handleRemoveDirectory, 
             <div className="settings-section">
                 <div className="collapsible-header" onClick={() => setIsQualityCollapsed(!isQualityCollapsed)}>
                     <ChevronRightIcon className={isQualityCollapsed ? '' : 'expanded'} />
-                    <h2>Quality</h2>
+                    <h2>Target Quality</h2>
                 </div>
 
                 {!isQualityCollapsed && (

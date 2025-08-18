@@ -1,3 +1,7 @@
+html {
+  scrollbar-gutter: stable;
+}
+
 :root {
   --background-color: #121212;
   --surface-color: #1e1e1e;
@@ -35,29 +39,25 @@ body {
   overflow-y: auto;
 }
 
-/* This makes the entire layout take up the full screen height when on the converter page */
 .layout-converter {
     height: 100vh;
     overflow: hidden;
 }
 
-/* This turns the main content area into a flex container to manage its children */
 .layout-converter .main-content {
     display: flex;
     flex-direction: column;
 }
 
-/* This makes the header and footer take only the space they need */
 .layout-converter .page-header,
 .layout-converter .converter-bottom-bar {
     flex-shrink: 0;
 }
 
-/* This makes the queue table grow to fill all remaining vertical space */
 .layout-converter .queue-table-container {
     flex-grow: 1;
     overflow-y: auto;
-    min-height: 0; /* A flexbox trick to allow it to shrink and scroll correctly */
+    min-height: 0;
 }
 .converter-page-layout {
   height: 100%;
@@ -217,6 +217,7 @@ body {
   margin-top: 1rem;
 }
 .artist-card {
+  background-color: var(--surface-color);
   padding: 1.5rem;
   border-radius: 12px;
   margin-top: 1rem;
@@ -237,6 +238,7 @@ body {
     gap: 0.5rem;
     cursor: pointer;
     padding-right: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
 }
 .collapsible-header h3, .collapsible-header h4, .collapsible-header h5 {
     margin: 0;
@@ -412,8 +414,7 @@ body {
 .settings-section h2 {
     text-align: left;
     color: var(--text-color);
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 0.75rem;
+    /* padding-bottom: 0.75rem; */
     margin-bottom: 1.5rem;
     font-weight: normal;
     font-size: 1.5rem;
@@ -466,6 +467,7 @@ body {
 }
 .unexpected-item-name {
     font-weight: bold;
+    flex:1;
 }
 .unexpected-item-reason {
     color: var(--text-secondary-color);
@@ -570,7 +572,7 @@ body {
 }
 .filter-section > .collapsible-header {
     cursor: pointer;
-    border-bottom: 1px solid var(--border-color);
+    /* border-bottom: 1px solid var(--border-color); */
     padding-bottom: 0.75rem;
     margin-bottom: 1.5rem;
 }
@@ -775,6 +777,9 @@ body {
     width: 5%;
 }
 
+.library-display .collapsible-header {
+  border: none;
+}
 
 @media (max-width: 650px) {
   .add-directory-controls {

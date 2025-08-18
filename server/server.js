@@ -248,25 +248,9 @@ async function processQueue() {
                     broadcast({ type: 'progress', path: job.path, percent });
                 })
                 .on('end', async () => {
+                    console.log(`Conversion for ${job.name} complete.`);
                     job.status = 'Complete';
                     broadcast({ type: 'status_update', path: job.path, status: 'Complete' });
-                    
-                    try {
-                        console.log(`Conversion for ${job.name} complete. Triggering library re-scan.`);
-                        const parentDirectory = await findDirectoryForPath(job.path);
-                        if (parentDirectory) {
-                            await db.clearDirectoryData(parentDirectory.id);
-                            const libraryData = await scanDirectory(parentDirectory.path);
-                            await persistLibrary(libraryData, parentDirectory.id);
-                            const updatedLibrary = await db.getFullLibrary();
-                            // Broadcast the entire new library to all clients
-                            broadcast({ type: 'library_update', library: updatedLibrary });
-                            console.log('Library re-scan and broadcast complete.');
-                        }
-                    } catch (scanError) {
-                        console.error("Failed to re-scan library after conversion:", scanError);
-                    }
-
                     resolve();
                 })
                 .on('error', (err) => { job.status = 'Error'; broadcast({ type: 'status_update', path: job.path, status: 'Error', reason: err.message }); reject(err); })
