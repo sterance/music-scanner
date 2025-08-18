@@ -21,6 +21,10 @@ const defaultLibraryFilters = {
     above: true,
 };
 
+const defaultViewSettings = {
+    showWarnings: true,
+}
+
 function App() {
   const [currentPage, setCurrentPage] = useState('library');
   const [directories, setDirectories] = useState([]);
@@ -29,6 +33,7 @@ function App() {
   const [libraryFilters, setLibraryFilters] = useState(defaultLibraryFilters);
   const [conversionQueue, setConversionQueue] = useState([]);
   const [isQueuePaused, setIsQueuePaused] = useState(false);
+  const [viewSettings, setViewsettings] = useState(defaultViewSettings);
 
   // --- WebSocket Connection ---
   useEffect(() => {
@@ -99,6 +104,10 @@ function App() {
         if (savedLibraryFilters) {
             setLibraryFilters(JSON.parse(savedLibraryFilters));
         }
+        const savedViewSettings = localStorage.getItem('viewSettings');
+        if (savedViewSettings) {
+            setViewsettings({ ...defaultViewSettings, ...JSON.parse(savedViewSettings) });
+        }
     } catch (error) {
         console.error("Failed to parse settings from localStorage", error);
     }
@@ -112,6 +121,10 @@ function App() {
   useEffect(() => {
     localStorage.setItem('libraryFilters', JSON.stringify(libraryFilters));
   }, [libraryFilters]);
+
+  useEffect(() => {
+    localStorage.setItem('viewSettings', JSON.stringify(viewSettings));
+  }, [viewSettings]);
 
   // --- Handler Functions ---
   const handleAddDirectory = async (pathInput) => {
@@ -199,6 +212,8 @@ function App() {
                     handleScan={handleScan}
                     qualitySettings={qualitySettings}
                     setQualitySettings={setQualitySettings}
+                    viewSettings={viewSettings}
+                    setViewsettings={setViewsettings}
                 />}
         </main>
     </div>

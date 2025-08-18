@@ -6,19 +6,34 @@ import UnexpectedItems from './UnexpectedItems';
 import { compareTrackToTarget } from '../utils/quality';
 import { toast } from 'react-hot-toast';
 
-function Album({ album, onRenameSuccess, qualitySettings, handleAddToQueue }) {
+function Album({ album, onRenameSuccess, qualitySettings, handleAddToQueue, showWarnings }) {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [newName, setNewName] = useState(album.title);
+    const [isSubfolderWarningIgnored, setIsSubfolderWarningIgnored] = useState(false);
+    const [areAlbumFilesIgnored, setAreAlbumFilesIgnored] = useState(false);
 
     const unnecessarySubfolder = useMemo(() => {
+        if (isSubfolderWarningIgnored) return [];
         if (album.discs.length === 1 && !album.discs[0].isRoot) {
             return [{ name: album.discs[0].name, reason: 'This subfolder could be removed.' }];
         }
         return [];
-    }, [album.discs]);
+    }, [album.discs, isSubfolderWarningIgnored]);
 
-    const hasUnexpectedFiles = album.unexpectedItems && album.unexpectedItems.length > 0;
+    const handleDeleteUnexpectedAlbumFiles = async () => {
+        const filePaths = album.unexpectedItems.map(item => item.path);
+        try {
+            await axios.post('http://localhost:3001/api/delete-files', { filePaths });
+            toast.success('Unexpected files deleted! Re-scanning...');
+            onRenameSuccess();
+        } catch (error) {
+            const errorMsg = error.response?.data?.error || 'An unknown error occurred.';
+            toast.error(`Error: ${errorMsg}`);
+        }
+    };
+    
+    const unexpectedAlbumItems = areAlbumFilesIgnored ? [] : album.unexpectedItems;
 
     const handleRename = async (e) => {
         e.preventDefault();
@@ -40,6 +55,17 @@ function Album({ album, onRenameSuccess, qualitySettings, handleAddToQueue }) {
     };
     const handleCancel = (e) => { e?.stopPropagation(); setIsEditing(false); setNewName(album.title); };
     const handleKeyDown = (e) => { if (e.key === 'Escape') { handleCancel(); } };
+    
+    const handleFixSubfolder = async () => {
+        try {
+            await axios.post('http://localhost:3001/api/fix-unnecessary-subfolder', { albumPath: album.path });
+            toast.success('Subfolder issue fixed! Re-scanning...');
+            onRenameSuccess(); // Re-scan to reflect changes
+        } catch (error) {
+            const errorMsg = error.response?.data?.error || 'An unknown error occurred.';
+            toast.error(`Error: ${errorMsg}`);
+        }
+    };
 
     return (
         <div className="album-section">
@@ -67,8 +93,25 @@ function Album({ album, onRenameSuccess, qualitySettings, handleAddToQueue }) {
                             handleAddToQueue={handleAddToQueue}
                         />
                     ))}
-                    <UnexpectedItems items={unnecessarySubfolder} title="Unnecessary Subfolder Found" />
-                    {hasUnexpectedFiles && <UnexpectedItems items={album.unexpectedItems} title="Non-Music Files Found" />}
+                    {showWarnings && (
+                        <>
+                        <UnexpectedItems
+                        items={unnecessarySubfolder}
+                        title="Unnecessary Subfolder Found"
+                        onFix={handleFixSubfolder}
+                        onIgnore={() => setIsSubfolderWarningIgnored(true)}
+                    />
+                    {unexpectedAlbumItems && unexpectedAlbumItems.length > 0 && (
+                        <UnexpectedItems 
+                            items={unexpectedAlbumItems} 
+                            title="Non-Music Files Found"
+                            onFix={handleDeleteUnexpectedAlbumFiles}
+                            onIgnore={() => setAreAlbumFilesIgnored(true)}
+                        />
+                    )}
+                    </>
+                )}    
+
                 </div>
             )}
         </div>

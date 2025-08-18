@@ -352,6 +352,60 @@ app.post('/api/scan', async (req, res) => {
     }
 });
 
+app.post('/api/fix-unnecessary-subfolder', async (req, res) => {
+    const { albumPath } = req.body;
+    if (!albumPath) {
+        return res.status(400).json({ error: 'Album path is required.' });
+    }
+
+    try {
+        const albumContents = await fs.readdir(albumPath, { withFileTypes: true });
+        const subfolders = albumContents.filter(d => d.isDirectory());
+
+        // Basic check: only try to fix if there is exactly one subfolder
+        if (subfolders.length !== 1) {
+            return res.status(400).json({ error: 'Expected exactly one subfolder to fix.' });
+        }
+        const subfolder = subfolders[0];
+        const subfolderPath = path.join(albumPath, subfolder.name);
+        
+        const filesToMove = await fs.readdir(subfolderPath);
+
+        for (const file of filesToMove) {
+            const oldPath = path.join(subfolderPath, file);
+            const newPath = path.join(albumPath, file);
+            await fs.rename(oldPath, newPath);
+            console.log(`Moved ${file} to ${albumPath}`);
+        }
+
+        await fs.rmdir(subfolderPath);
+        console.log(`Removed empty directory: ${subfolderPath}`);
+
+        res.json({ success: true, message: 'Successfully moved tracks and removed subfolder.' });
+
+    } catch (error) {
+        console.error(`[500] Error fixing subfolder for "${albumPath}":`, error);
+        res.status(500).json({ error: 'Failed to fix subfolder. Please check server permissions and logs.' });
+    }
+});
+
+app.post('/api/delete-files', async (req, res) => {
+    const { filePaths } = req.body;
+    if (!filePaths || !Array.isArray(filePaths)) {
+        return res.status(400).json({ error: 'An array of file paths is required.' });
+    }
+
+    try {
+        const deletionPromises = filePaths.map(filePath => fs.unlink(filePath));
+        await Promise.all(deletionPromises);
+        console.log(`Deleted ${filePaths.length} files.`);
+        res.json({ success: true, message: 'Files deleted successfully.' });
+    } catch (error) {
+        console.error(`[500] Error deleting files:`, error);
+        res.status(500).json({ error: 'Failed to delete files. Check server permissions.' });
+    }
+});
+
 // --- Converter Endpoints ---
 app.post('/api/convert/add', (req, res) => {
     console.log('[BACKEND] Received POST request on /api/convert/add');

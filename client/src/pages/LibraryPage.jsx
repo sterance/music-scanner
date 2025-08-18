@@ -3,7 +3,7 @@ import Artist from '../components/Artist';
 import FilterBar from '../components/FilterBar';
 import { compareTrackToTarget } from '../utils/quality';
 
-function LibraryPage({ library, qualitySettings, libraryFilters, setLibraryFilters, handleScanAll, handleAddToQueue }) {
+function LibraryPage({ library, qualitySettings, libraryFilters, setLibraryFilters, handleScanAll, handleAddToQueue, showWarnings }) {
     const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(true);
 
     const filteredLibrary = useMemo(() => {
@@ -53,6 +53,7 @@ function LibraryPage({ library, qualitySettings, libraryFilters, setLibraryFilte
                             onRenameSuccess={handleScanAll}
                             qualitySettings={qualitySettings}
                             handleAddToQueue={handleAddToQueue}
+                            showWarnings={showWarnings}
                         />
                     ))}
                 </div>

@@ -1,12 +1,17 @@
 import React, { useState } from 'react';
 import QualitySettings from '../components/QualitySettings';
 import DirectorySettings from '../components/DirectorySettings';
+import ViewSettings from '../components/ViewSettings';
 import { ChevronRightIcon } from '../components/Icons';
 
-function SettingsPage({ directories, handleAddDirectory, handleRemoveDirectory, handleScan, qualitySettings, setQualitySettings }) {
+function SettingsPage({ 
+    directories, handleAddDirectory, handleRemoveDirectory, handleScan,
+    qualitySettings, setQualitySettings, viewSettings, setViewSettings
+}) {
     
     const [isDirectoriesCollapsed, setIsDirectoriesCollapsed] = useState(true);
     const [isQualityCollapsed, setIsQualityCollapsed] = useState(true);
+    const [isViewCollapsed, setIsViewCollapsed] = useState(true);
 
     return (
         <>
@@ -38,6 +43,16 @@ function SettingsPage({ directories, handleAddDirectory, handleRemoveDirectory, 
 
                 {!isQualityCollapsed && (
                     <QualitySettings settings={qualitySettings} setSettings={setQualitySettings} />
+                )}
+            </div>
+
+            <div className="settings-section">
+                <div className="collapsible-header" onClick={() => setIsViewCollapsed(!isViewCollapsed)}>
+                    <ChevronRightIcon className={isViewCollapsed ? '' : 'expanded'} />
+                    <h2>View Options</h2>
+                </div>
+                {!isViewCollapsed && (
+                    <ViewSettings settings={viewSettings} setSettings={setViewSettings} />
                 )}
             </div>
         </>

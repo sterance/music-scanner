@@ -3,11 +3,13 @@ import axios from 'axios';
 import Album from './Album';
 import UnexpectedItems from './UnexpectedItems';
 import { ChevronRightIcon, EditIcon } from './Icons';
+import { toast } from 'react-hot-toast';
 
-function Artist({ artist, onRenameSuccess, qualitySettings, handleAddToQueue }) {
+function Artist({ artist, onRenameSuccess, qualitySettings, handleAddToQueue, showWarnings }) {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [newName, setNewName] = useState(artist.name);
+    const [areArtistFilesIgnored, setAreArtistFilesIgnored] = useState(false);
 
     const handleRename = async (e) => {
         e.preventDefault();
@@ -30,7 +32,20 @@ function Artist({ artist, onRenameSuccess, qualitySettings, handleAddToQueue }) 
     const handleCancel = (e) => { e?.stopPropagation(); setIsEditing(false); setNewName(artist.name); };
     const handleKeyDown = (e) => { if (e.key === 'Escape') { handleCancel(); } };
     
-    const hasUnexpected = artist.unexpectedItems && artist.unexpectedItems.length > 0;
+    const handleDeleteUnexpectedArtistFiles = async () => {
+        const filePaths = artist.unexpectedItems.map(item => item.path);
+        try {
+            await axios.post('http://localhost:3001/api/delete-files', { filePaths });
+            toast.success('Unexpected files deleted! Re-scanning...');
+            onRenameSuccess();
+        } catch (error) {
+            const errorMsg = error.response?.data?.error || 'An unknown error occurred.';
+            toast.error(`Error: ${errorMsg}`);
+        }
+    };
+
+    const unexpectedArtistItems = areArtistFilesIgnored ? [] : artist.unexpectedItems;
+    const hasUnexpected = unexpectedArtistItems && unexpectedArtistItems.length > 0;
 
     return (
         <div className="artist-card">
@@ -55,12 +70,15 @@ function Artist({ artist, onRenameSuccess, qualitySettings, handleAddToQueue }) 
                             onRenameSuccess={onRenameSuccess}
                             qualitySettings={qualitySettings}
                             handleAddToQueue={handleAddToQueue}
+                            showWarnings={showWarnings}
                         />
                     ))}
-                    {hasUnexpected && (
+                    {showWarnings && hasUnexpected (
                         <UnexpectedItems 
-                            items={artist.unexpectedItems}
+                            items={unexpectedArtistItems}
                             title="Non-Music Files Found"
+                            onFix={handleDeleteUnexpectedArtistFiles}
+                            onIgnore={() => setAreArtistFilesIgnored(true)}
                         />
                     )}
                 </div>
