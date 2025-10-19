@@ -36,7 +36,6 @@ function Artist({ artist, onRenameSuccess, qualitySettings, handleAddToQueue, sh
         const filePaths = artist.unexpectedItems.map(item => item.path);
         try {
             await axios.post('http://localhost:3001/api/delete-files', { filePaths });
-            toast.success('Unexpected files deleted! Re-scanning...');
             onRenameSuccess();
         } catch (error) {
             const errorMsg = error.response?.data?.error || 'An unknown error occurred.';

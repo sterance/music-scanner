@@ -59,7 +59,6 @@ function Album({ album, onRenameSuccess, qualitySettings, handleAddToQueue, show
     const handleFixSubfolder = async () => {
         try {
             await axios.post('http://localhost:3001/api/fix-unnecessary-subfolder', { albumPath: album.path });
-            toast.success('Subfolder issue fixed! Re-scanning...');
             onRenameSuccess(); // Re-scan to reflect changes
         } catch (error) {
             const errorMsg = error.response?.data?.error || 'An unknown error occurred.';

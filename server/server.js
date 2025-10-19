@@ -71,106 +71,80 @@ const getTracksInDir = async (directoryPath) => {
 };
 
 async function scanDirectory(musicPath) {
-    const library = [];
+    const originalTracks = [];
+    const convertedTracks = [];
     const artistDirents = await fs.readdir(musicPath, { withFileTypes: true });
     for (const artistDirent of artistDirents) {
         if (!artistDirent.isDirectory()) continue;
-
+        const artistName = artistDirent.name;
         const artistPath = path.join(musicPath, artistDirent.name);
-        const artistData = { name: artistDirent.name, path: artistPath, unexpectedItems: [], albums: [] };
-        
-        const artistContents = await fs.readdir(artistPath, { withFileTypes: true });
-        artistContents.forEach(item => { if (item.isFile()) artistData.unexpectedItems.push({ name: item.name, path: path.join(artistPath, item.name), reason: 'File in artist directory.' }); });
-        
-        const albumDirents = artistContents.filter(d => d.isDirectory());
+        const albumDirents = (await fs.readdir(artistPath, { withFileTypes: true })).filter(d => d.isDirectory());
         for (const albumDirent of albumDirents) {
+            const albumName = albumDirent.name;
             const albumPath = path.join(artistPath, albumDirent.name);
-            const albumData = {
-                title: albumDirent.name,
-                path: albumPath,
-                unexpectedItems: [],
-                discs: [],
-                foundConvertedFiles: []
-            };
-            
-            const albumContents = await fs.readdir(albumPath, { withFileTypes: true });
-            
-            const rootScan = await getTracksInDir(albumPath);
-            if (rootScan.tracks.length > 0) {
-                albumData.discs.push({ name: albumData.title, path: albumData.path, isRoot: true, tracks: rootScan.tracks });
-            }
-            albumData.unexpectedItems.push(...rootScan.otherFiles.map(f => ({ ...f, reason: 'Unsupported file in album directory.' })));
 
-            const subfolders = albumContents.filter(d => d.isDirectory());
+            // root-level tracks (disc is album name)
+            const rootScan = await getTracksInDir(albumPath);
+            for (const t of rootScan.tracks) {
+                originalTracks.push({
+                    trackName: t.name,
+                    album: albumName,
+                    disc: albumName,
+                    artist: artistName,
+                    extension: t.extension,
+                    bitDepth: t.bitDepth,
+                    sampleRate: t.sampleRate,
+                    path: t.path
+                });
+            }
+
+            // subfolders
+            const subfolders = (await fs.readdir(albumPath, { withFileTypes: true })).filter(d => d.isDirectory());
             for (const subfolder of subfolders) {
                 const subfolderPath = path.join(albumPath, subfolder.name);
-                
                 if (subfolder.name.toLowerCase() === 'converted') {
                     const convertedScan = await getTracksInDir(subfolderPath);
-                    for (const convertedTrack of convertedScan.tracks) {
-                        // We need to find the original to link it. We assume the original has a different extension.
-                        // This is a simplified search; a more robust version could check against all known tracks.
-                        const originalFileBase = convertedTrack.name;
-                        const potentialOriginals = rootScan.tracks.filter(t => t.name === originalFileBase);
-                        
-                        if (potentialOriginals.length > 0) {
-                            albumData.foundConvertedFiles.push({
-                                originalPath: potentialOriginals[0].path,
-                                convertedPath: convertedTrack.path
-                            });
-                        }
+                    for (const ct of convertedScan.tracks) {
+                        convertedTracks.push({
+                            trackName: ct.name,
+                            album: albumName,
+                            disc: albumName, // best-effort; if discs exist, disc folder name is not captured here
+                            artist: artistName,
+                            extension: ct.extension,
+                            bitDepth: ct.bitDepth,
+                            sampleRate: ct.sampleRate,
+                            path: ct.path
+                        });
                     }
-                    continue; // Skip processing this folder as a regular disc
-                }
-
-                const discContents = await fs.readdir(subfolderPath, { withFileTypes: true });
-                if (discContents.some(d => d.isDirectory())) {
-                    albumData.unexpectedItems.push({ name: subfolder.name, path: subfolderPath, reason: 'Contains nested subdirectories.' });
                     continue;
                 }
+
+                const discName = subfolder.name;
                 const discScan = await getTracksInDir(subfolderPath);
-                if (discScan.tracks.length > 0) {
-                    albumData.discs.push({ name: subfolder.name, path: subfolderPath, isRoot: false, tracks: discScan.tracks });
+                for (const t of discScan.tracks) {
+                    originalTracks.push({
+                        trackName: t.name,
+                        album: albumName,
+                        disc: discName,
+                        artist: artistName,
+                        extension: t.extension,
+                        bitDepth: t.bitDepth,
+                        sampleRate: t.sampleRate,
+                        path: t.path
+                    });
                 }
-                albumData.unexpectedItems.push(...discScan.otherFiles.map(f => ({ ...f, reason: `Unsupported file in disc folder: ${subfolder.name}` })));
-            }
-            
-            if (albumData.discs.length > 0 || albumData.unexpectedItems.length > 0) {
-                artistData.albums.push(albumData);
-            }
-        }
-        
-        if (artistData.albums.length > 0 || artistData.unexpectedItems.length > 0) {
-            library.push(artistData);
-        }
-    }
-    return library;
-}
-
-async function persistLibrary(libraryData, directoryId) {
-    for (const artist of libraryData) {
-        const artistId = await db.insertArtist(artist, directoryId);
-        for (const album of artist.albums) {
-            const albumId = await db.insertAlbum(album, artistId);
-            for (const disc of album.discs) {
-                const discId = await db.insertDisc(disc, albumId);
-                for (const track of disc.tracks) {
-                    await db.insertTrack(track, discId);
-                }
-            }
-            // After all original tracks in an album are inserted, log any converted files found.
-            for (const convertedFile of album.foundConvertedFiles) {
-                await db.insertConvertedFile(convertedFile.originalPath, convertedFile.convertedPath);
             }
         }
     }
+    return { originalTracks, convertedTracks };
 }
 
-async function findDirectoryForPath(filePath) {
-    const directories = await db.getDirectoriesOnly();
-    // Find the directory whose path is a parent of the filePath
-    return directories.find(dir => filePath.startsWith(dir.path));
+async function persistFlatLibrary(originalTracks, convertedTracks) {
+    for (const track of originalTracks) { await db.insertTrackFlat(track); }
+    for (const track of convertedTracks) { await db.insertConvertedFlat(track); }
 }
+
+// directory listing is now client-side; no server-side directories table
 
 // --- Conversion Logic ---
 async function processQueue() {
@@ -180,25 +154,6 @@ async function processQueue() {
     if (!job) {
         console.log('Conversion queue finished or no pending jobs.');
         isConverting = false;
-        
-        const firstCompleted = conversionQueue.find(item => item.status === 'Complete');
-        if (firstCompleted) {
-            try {
-                console.log(`Queue finished. Triggering final library re-scan.`);
-                const parentDirectory = await findDirectoryForPath(firstCompleted.path);
-                if (parentDirectory) {
-                    await db.clearDirectoryData(parentDirectory.id);
-                    const libraryData = await scanDirectory(parentDirectory.path);
-                    await persistLibrary(libraryData, parentDirectory.id);
-                    const updatedLibrary = await db.getFullLibrary();
-                    broadcast({ type: 'library_update', library: updatedLibrary });
-                    console.log('Final library re-scan and broadcast complete.');
-                }
-            } catch (scanError) {
-                console.error("Failed to re-scan library after conversion:", scanError);
-            }
-        }
-
         broadcast({ type: 'queue_update', queue: conversionQueue });
         return;
     }
@@ -251,6 +206,22 @@ async function processQueue() {
                     console.log(`Conversion for ${job.name} complete.`);
                     job.status = 'Complete';
                     broadcast({ type: 'status_update', path: job.path, status: 'Complete' });
+                    try {
+                        const meta = await mm.parseFile(outputPath);
+                        const flat = {
+                            trackName: meta.common && meta.common.title ? meta.common.title : path.parse(outputPath).name,
+                            album: meta.common && meta.common.album ? meta.common.album : undefined,
+                            disc: (meta.common && meta.common.disk && meta.common.disk.no) ? `Disc ${meta.common.disk.no}` : (meta.common && meta.common.album ? meta.common.album : undefined),
+                            artist: meta.common && meta.common.artist ? meta.common.artist : undefined,
+                            extension: path.extname(outputPath),
+                            bitDepth: meta.format && meta.format.bitsPerSample ? `${meta.format.bitsPerSample}-bit` : 'N/A',
+                            sampleRate: meta.format && meta.format.sampleRate ? `${meta.format.sampleRate / 1000} kHz` : 'N/A',
+                            path: outputPath
+                        };
+                        await db.insertConvertedFlat(flat);
+                    } catch (insErr) {
+                        console.error('Failed to insert converted file metadata:', insErr);
+                    }
                     resolve();
                 })
                 .on('error', (err) => { job.status = 'Error'; broadcast({ type: 'status_update', path: job.path, status: 'Error', reason: err.message }); reject(err); })
@@ -268,39 +239,12 @@ async function processQueue() {
 
 // --- API Endpoints ---
 
-app.get('/api/directories', async (req, res) => {
-    try {
-        const directories = await db.getDirectoriesOnly();
-        res.json(directories);
-    } catch (e) {
-        res.status(500).json({ error: 'Failed to fetch directories.' });
-    }
-});
-
 app.get('/api/library', async (req, res) => {
     try {
-        const library = await db.getFullLibrary();
+        const library = await db.getLibrary();
         res.json(library);
     } catch (e) {
         res.status(500).json({ error: 'Failed to fetch library.' });
-    }
-});
-
-app.post('/api/directories', async (req, res) => {
-    try {
-        const newDirectory = await db.addDirectory(req.body.path);
-        res.status(201).json(newDirectory);
-    } catch (e) {
-        res.status(500).json({ error: 'Failed to add directory.' });
-    }
-});
-
-app.delete('/api/directories/:id', async (req, res) => {
-    try {
-        await db.removeDirectory(req.params.id);
-        res.status(204).send();
-    } catch (e) {
-        res.status(500).json({ error: 'Failed to remove directory.' });
     }
 });
 
@@ -338,16 +282,19 @@ app.post('/api/browse', async (req, res) => {
 });
 
 app.post('/api/scan', async (req, res) => {
-    const { directoryId, path: musicPath } = req.body;
-    if (!directoryId || !musicPath) return res.status(400).json({ error: 'Directory ID and path are required.' });
+    const { paths } = req.body;
+    if (!paths || !Array.isArray(paths) || paths.length === 0) return res.status(400).json({ error: 'paths must be a non-empty array.' });
     try {
-        await db.clearDirectoryData(directoryId);
-        const libraryData = await scanDirectory(musicPath);
-        await persistLibrary(libraryData, directoryId);
-        const updatedLibrary = await db.getFullLibrary();
+        await db.clearLibrary();
+        await db.clearConverted();
+        for (const p of paths) {
+            const { originalTracks, convertedTracks } = await scanDirectory(p);
+            await persistFlatLibrary(originalTracks, convertedTracks);
+        }
+        const updatedLibrary = await db.getLibrary();
         res.json(updatedLibrary);
     } catch (error) {
-        console.error("Scan failed with error:", error);
+        console.error('Scan failed with error:', error);
         res.status(500).json({ error: error.message });
     }
 });

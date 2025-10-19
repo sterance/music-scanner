@@ -23,7 +23,7 @@ body {
   color: var(--text-color);
 }
 
-.main-layout {
+.app-container {
   display: flex;
   min-height: 100vh;
 }
@@ -31,12 +31,20 @@ body {
   width: 200px;
   background-color: #000;
   padding: 1rem;
+  overflow-y: auto;
   flex-shrink: 0;
+  transition: width 0.3s ease;
+  position: relative;
+}
+.sidebar.collapsed {
+  width: 60px;
 }
 .main-content {
-  flex-grow: 1;
+  flex: 1;
   padding: 2rem;
+  min-height: 100vh;
   overflow-y: auto;
+  transition: margin-left 0.3s ease;
 }
 
 .layout-converter {
@@ -47,6 +55,8 @@ body {
 .layout-converter .main-content {
     display: flex;
     flex-direction: column;
+    height: 100vh;
+    padding: 0;
 }
 
 .layout-converter .page-header,
@@ -59,21 +69,82 @@ body {
     overflow-y: auto;
     min-height: 0;
 }
+
 .converter-page-layout {
   height: 100%;
   display: flex;
   flex-direction: column;
+  padding: 2rem;
+  box-sizing: border-box;
 }
 
 
-.sidebar ul {
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+.sidebar-toggle {
+  background: none;
+  border: none;
+  color: var(--text-color);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+  margin-right: 0.75rem;
+}
+.sidebar-toggle:hover {
+  background-color: var(--surface-color);
+}
+.hamburger {
+  display: flex;
+  flex-direction: column;
+  width: 20px;
+  height: 16px;
+  justify-content: space-between;
+}
+.hamburger span {
+  display: block;
+  height: 2px;
+  width: 100%;
+  background-color: currentColor;
+  border-radius: 1px;
+  transition: all 0.3s ease;
+}
+.sidebar.collapsed .hamburger span:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+.sidebar.collapsed .hamburger span:nth-child(2) {
+  opacity: 0;
+}
+.sidebar.collapsed .hamburger span:nth-child(3) {
+  transform: rotate(-45deg) translate(7px, -6px);
+}
+.sidebar-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: var(--text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+.sidebar.collapsed .sidebar-title {
+  opacity: 0;
+  width: 0;
+}
+.sidebar-nav {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 .sidebar-button {
   width: 100%;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem;
   background: none;
   border: none;
   color: var(--text-secondary-color);
@@ -81,7 +152,12 @@ body {
   font-size: 1rem;
   border-radius: 6px;
   cursor: pointer;
-  transition: background-color 0.2s, color 0.2s;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+  position: relative;
 }
 .sidebar-button:hover {
   background-color: var(--surface-color);
@@ -91,6 +167,25 @@ body {
   background-color: var(--primary-color);
   color: white;
   font-weight: bold;
+}
+.sidebar-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.sidebar-button span {
+  white-space: nowrap;
+  overflow: hidden;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+.sidebar.collapsed .sidebar-button span {
+  opacity: 0;
+  width: 0;
+}
+.sidebar.collapsed .sidebar-button {
+  justify-content: center;
+  padding: 0.75rem 0.5rem;
 }
 .page-header {
   text-align: left;
@@ -134,7 +229,7 @@ body {
   border-color: var(--primary-color);
 }
 .button {
-  padding: 0.5rem 1rem;
+  padding: 0;
   font-size: 1rem;
   font-weight: bold;
   border: none;
@@ -143,6 +238,12 @@ body {
   transition: background-color 0.2s, transform 0.1s;
   color: white;
   white-space: nowrap;
+}
+
+.col-actions .button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .button:disabled {
   background-color: #555;
@@ -358,11 +459,18 @@ body {
 .inline-edit-form .button {
     padding: 0.5rem;
 }
+.table-responsive {
+    overflow-x: auto;
+    width: 100%;
+}
+
 .track-table {
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
+    max-width: 100%;
 }
+
 .track-table th, .track-table td {
     padding: 0.5rem;
     text-align: left;
@@ -371,29 +479,103 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
 .track-table th {
     color: var(--text-secondary-color);
     font-weight: normal;
     font-size: 0.9rem;
 }
-.track-table .col-convert {
-    width: 3%;
-    text-align: center;
-}
+
 .track-table .col-name {
-    width: 70%;
+    width: var(--col-track-width, 200px);
+    min-width: var(--col-track-width, 200px);
+    max-width: var(--col-track-width, 200px);
 }
-.track-table .col-type,
-.track-table .col-bitdepth,
-.track-table .col-srate {
-    width: 9%;
+
+.track-table .col-type:nth-of-type(2) {
+    width: var(--col-album-width, 150px);
+    min-width: var(--col-album-width, 150px);
+    max-width: var(--col-album-width, 150px);
+}
+
+.track-table .col-type:nth-of-type(3) {
+    width: var(--col-artist-width, 150px);
+    min-width: var(--col-artist-width, 150px);
+    max-width: var(--col-artist-width, 150px);
+}
+
+.track-table .col-type:nth-of-type(4) {
+    width: var(--col-ext-width, 60px);
+    min-width: var(--col-ext-width, 60px);
+    max-width: var(--col-ext-width, 60px);
     text-align: right;
     color: var(--text-secondary-color);
 }
+
+.track-table .col-bitdepth {
+    width: var(--col-bitdepth-width, 100px);
+    min-width: var(--col-bitdepth-width, 100px);
+    max-width: var(--col-bitdepth-width, 100px);
+    text-align: right;
+    color: var(--text-secondary-color);
+}
+
+.track-table .col-srate {
+    width: var(--col-srate-width, 120px);
+    min-width: var(--col-srate-width, 120px);
+    max-width: var(--col-srate-width, 120px);
+    text-align: right;
+    color: var(--text-secondary-color);
+}
+
 .track-table .col-actions {
-    width: 3%;
+    width: var(--col-actions-width, 60px);
+    min-width: var(--col-actions-width, 60px);
+    max-width: var(--col-actions-width, 60px);
     text-align: center;
     vertical-align: middle;
+}
+
+.track-table tbody .col-name {
+    width: var(--col-track-width, 200px);
+    min-width: var(--col-track-width, 200px);
+    max-width: var(--col-track-width, 200px);
+}
+
+.track-table tbody td:nth-child(2) {
+    width: var(--col-album-width, 150px);
+    min-width: var(--col-album-width, 150px);
+    max-width: var(--col-album-width, 150px);
+}
+
+.track-table tbody td:nth-child(3) {
+    width: var(--col-artist-width, 150px);
+    min-width: var(--col-artist-width, 150px);
+    max-width: var(--col-artist-width, 150px);
+}
+
+.track-table tbody td:nth-child(4) {
+    width: var(--col-ext-width, 60px);
+    min-width: var(--col-ext-width, 60px);
+    max-width: var(--col-ext-width, 60px);
+    text-align: right;
+    color: var(--text-secondary-color);
+}
+
+.track-table tbody td:nth-child(5) {
+    width: var(--col-bitdepth-width, 100px);
+    min-width: var(--col-bitdepth-width, 100px);
+    max-width: var(--col-bitdepth-width, 100px);
+    text-align: right;
+    color: var(--text-secondary-color);
+}
+
+.track-table tbody td:nth-child(6) {
+    width: var(--col-srate-width, 120px);
+    min-width: var(--col-srate-width, 120px);
+    max-width: var(--col-srate-width, 120px);
+    text-align: right;
+    color: var(--text-secondary-color);
 }
 .track-table th .button-edit {
   padding: 0.4rem;
@@ -705,8 +887,8 @@ body {
     flex-shrink: 0;
     display: flex;
     gap: 2rem;
-    margin-top: 2rem;
     align-items: stretch;
+    margin-top: 2rem;
 }
 .converter-bottom-bar .progress-section {
     flex-grow: 1;
@@ -865,6 +1047,45 @@ input:checked + .slider:before {
 
 .slider.round:before {
     border-radius: 50%;
+}
+
+@media (max-width: 768px) {
+  .app-container {
+    position: relative;
+  }
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 1000;
+    transform: translateX(0);
+    transition: transform 0.3s ease;
+  }
+  .sidebar.collapsed {
+    transform: translateX(-100%);
+    width: 200px;
+  }
+  .main-content {
+    width: 100%;
+    margin-left: 0;
+  }
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+  }
+  .sidebar-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+  }
 }
 
 @media (max-width: 650px) {

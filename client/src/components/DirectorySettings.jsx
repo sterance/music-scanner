@@ -38,27 +38,24 @@ function DirectorySettings({ directories, handleAddDirectory, handleRemoveDirect
             </div>
 
             <div className="directory-list-container">
-                {directories.map(dir => (
-                    <div key={dir.id} className="directory-item">
+                {directories.map(dirPath => (
+                    <div key={dirPath} className="directory-item">
                         <div className="directory-header">
-                            <span className="directory-path">{dir.path}</span>
+                            <span className="directory-path">{dirPath}</span>
                             <div className="directory-actions">
                                 <button 
                                     className="button button-secondary button-icon" 
                                     title="Remove Directory"
-                                    onClick={() => handleRemoveDirectory(dir.id)} 
-                                    disabled={dir.isLoading}>
+                                    onClick={() => handleRemoveDirectory(dirPath)}>
                                     <TrashIcon />
                                 </button>
                                 <button 
                                     className="button button-primary" 
-                                    onClick={() => handleScan(dir.id)} 
-                                    disabled={dir.isLoading}>
-                                    {dir.isLoading ? 'Scanning...' : 'Scan'}
+                                    onClick={() => handleScan(dirPath)}>
+                                    Scan
                                 </button>
                             </div>
                         </div>
-                        {dir.error && <div className="error-message">{dir.error}</div>}
                     </div>
                 ))}
             </div>

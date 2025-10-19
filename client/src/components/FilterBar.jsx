@@ -26,7 +26,7 @@ function FilterBar({ filters, setFilters, isCollapsed, setIsCollapsed }) {
                     <div className="filter-group">
                         <input type="checkbox" id="filter-target" className="filter-checkbox-input" checked={filters.target} onChange={() => handleFilterChange('target')} />
                         <label htmlFor="filter-target" className="filter-button-label">
-                           <CheckmarkIcon /> Target
+                           <CheckmarkIcon /> At Target
                         </label>
                     </div>
                     <div className="filter-group">

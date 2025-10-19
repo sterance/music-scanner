@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './App.css';
-import { Toaster } from 'react-hot-toast';
+import { Toaster, toast } from 'react-hot-toast';
 
 import Sidebar from './components/Sidebar';
 import LibraryPage from './pages/LibraryPage';
@@ -33,7 +33,8 @@ function App() {
   const [libraryFilters, setLibraryFilters] = useState(defaultLibraryFilters);
   const [conversionQueue, setConversionQueue] = useState([]);
   const [isQueuePaused, setIsQueuePaused] = useState(false);
-  const [viewSettings, setViewsettings] = useState(defaultViewSettings);
+  const [viewSettings, setViewSettings] = useState(defaultViewSettings);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   // --- WebSocket Connection ---
   useEffect(() => {
@@ -85,8 +86,11 @@ function App() {
   useEffect(() => {
     const fetchInitialData = async () => {
         try {
-            const dirsResponse = await axios.get('http://localhost:3001/api/directories');
-            setDirectories(dirsResponse.data);
+            // load directories from localStorage
+            const savedDirs = localStorage.getItem('musicScanner.directories');
+            if (savedDirs) {
+                setDirectories(JSON.parse(savedDirs));
+            }
             const libraryResponse = await axios.get('http://localhost:3001/api/library');
             setLibrary(libraryResponse.data);
         } catch (error) {
@@ -106,7 +110,7 @@ function App() {
         }
         const savedViewSettings = localStorage.getItem('viewSettings');
         if (savedViewSettings) {
-            setViewsettings({ ...defaultViewSettings, ...JSON.parse(savedViewSettings) });
+            setViewSettings({ ...defaultViewSettings, ...JSON.parse(savedViewSettings) });
         }
     } catch (error) {
         console.error("Failed to parse settings from localStorage", error);
@@ -126,36 +130,44 @@ function App() {
     localStorage.setItem('viewSettings', JSON.stringify(viewSettings));
   }, [viewSettings]);
 
+  useEffect(() => {
+    localStorage.setItem('musicScanner.directories', JSON.stringify(directories));
+  }, [directories]);
+
   // --- Handler Functions ---
   const handleAddDirectory = async (pathInput) => {
-    if (pathInput && !directories.some(dir => dir.path === pathInput)) {
-        try {
-            const response = await axios.post('http://localhost:3001/api/directories', { path: pathInput });
-            setDirectories([...directories, response.data]);
-        } catch (error) {
-            console.error("Failed to add directory:", error);
-            alert("Error: Could not add directory.");
-        }
+    if (pathInput && !directories.includes(pathInput)) {
+      setDirectories(prev => [...prev, pathInput]);
     }
   };
 
-  const handleRemoveDirectory = async (id) => {
+  const handleRemoveDirectory = async (pathToRemove) => {
+    setDirectories(prev => prev.filter(p => p !== pathToRemove));
     try {
-        await axios.delete(`http://localhost:3001/api/directories/${id}`);
-        setDirectories(directories.filter(dir => dir.id !== id));
-        const libraryResponse = await axios.get('http://localhost:3001/api/library');
-        setLibrary(libraryResponse.data);
+      const libraryResponse = await axios.get('http://localhost:3001/api/library');
+      setLibrary(libraryResponse.data);
     } catch (error) {
-        console.error("Failed to remove directory:", error);
-        alert("Error: Could not remove directory.");
+      console.error('Failed to refresh library after directory removal:', error);
     }
   };
   
-  const handleScan = async (id) => {
-    const dirToScan = directories.find(d => d.id === id);
-    if (!dirToScan) return;
+  const handleScan = async (dirPath) => {
+    if (!dirPath) return;
+
+    const scanPromise = axios.post('http://localhost:3001/api/scan', { paths: [dirPath] });
+    toast.promise(scanPromise, {
+        loading: `Scanning ${dirPath}...`,
+        success: (res) => {
+            setLibrary(res.data);
+            return 'Scan complete!';
+        },
+        error: (err) => {
+            console.error("Scan failed:", err);
+            return `Scan failed: ${err.response?.data?.error || 'See console for details.'}`;
+        }
+    });
     try {
-      const res = await axios.post('http://localhost:3001/api/scan', { directoryId: id, path: dirToScan.path });
+      const res = await axios.post('http://localhost:3001/api/scan', { paths: [dirPath] });
       setLibrary(res.data);
     } catch (err) {
       console.error("Scan failed:", err);
@@ -163,7 +175,19 @@ function App() {
     }
   };
 
-  const handleScanAll = async () => { for (const dir of directories) { await handleScan(dir.id); } };
+  const handleScanAll = async () => {
+    if (!directories || directories.length === 0) return;
+    const scanPromise = axios.post('http://localhost:3001/api/scan', { paths: directories });
+    toast.promise(scanPromise, {
+      loading: `Scanning ${directories.length} director${directories.length > 1 ? 'ies' : 'y'}...`,
+      success: (res) => { setLibrary(res.data); return 'Scan complete!'; },
+      error: (err) => `Scan failed: ${err.response?.data?.error || 'See console for details.'}`
+    });
+    try {
+      const res = await axios.post('http://localhost:3001/api/scan', { paths: directories });
+      setLibrary(res.data);
+    } catch (err) { console.error('Scan all failed:', err); }
+  };
 
   const handleAddToQueue = async (track) => {
     try {
@@ -176,7 +200,7 @@ function App() {
   };
 
   return (
-    <div className={`main-layout ${currentPage === 'converter' ? 'layout-converter' : ''}`}>
+    <div className={`app-container ${currentPage === 'converter' ? 'layout-converter' : ''}`}>
         <Toaster 
             position="bottom-right"
             toastOptions={{
@@ -186,7 +210,13 @@ function App() {
                 },
             }}
         />
-        <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
+        <div className={`sidebar-overlay ${!isSidebarCollapsed ? 'visible' : ''}`} onClick={() => setIsSidebarCollapsed(true)} />
+        <Sidebar 
+            currentPage={currentPage} 
+            setCurrentPage={setCurrentPage}
+            isCollapsed={isSidebarCollapsed}
+            setIsCollapsed={setIsSidebarCollapsed}
+        />
         <main className="main-content">
             {currentPage === 'library' && 
                 <LibraryPage
@@ -213,7 +243,7 @@ function App() {
                     qualitySettings={qualitySettings}
                     setQualitySettings={setQualitySettings}
                     viewSettings={viewSettings}
-                    setViewsettings={setViewsettings}
+                    setViewSettings={setViewSettings}
                 />}
         </main>
     </div>
