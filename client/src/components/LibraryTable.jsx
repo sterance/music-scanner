@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useCallback } from 'react';
-import { PlusIcon } from './Icons';
+import { PlusIcon, EditIcon } from './Icons';
 import { calculateColumnWidths, applyColumnWidthsToTable } from '../utils/tableColumnResize';
 
 function LibraryTable({ tracks, onAddToQueue }) {
@@ -8,10 +8,10 @@ function LibraryTable({ tracks, onAddToQueue }) {
 
     const applyWidths = useCallback(() => {
         if (!tableRef.current || !containerRef.current || !tracks.length) return;
-        
+
         const containerWidth = containerRef.current.clientWidth;
         const widths = calculateColumnWidths(containerWidth, tracks);
-        
+
         if (widths) {
             applyColumnWidthsToTable(tableRef.current, widths);
         }
@@ -58,11 +58,19 @@ function LibraryTable({ tracks, onAddToQueue }) {
                             <td>{t.bitDepth}</td>
                             <td>{t.sampleRate}</td>
                             <td className="col-actions">
-                                {onAddToQueue && (
-                                    <button className="button button-primary" onClick={() => onAddToQueue({ name: t.trackName || t.name, extension: t.extension, bitDepth: t.bitDepth, sampleRate: t.sampleRate, path: t.path })}>
-                                        <PlusIcon />
+                                <div className="button-wrapper">
+                                    {onAddToQueue && (
+                                        <button className="button button-primary" onClick={() => onAddToQueue({ name: t.trackName || t.name, extension: t.extension, bitDepth: t.bitDepth, sampleRate: t.sampleRate, path: t.path })}>
+                                            <PlusIcon />
+                                        </button>
+                                    )}
+                                    <button className='button button-primary'>
+                                        <span style={{ display: 'inline-block', transform: 'scale(0.7)', transformOrigin: 'center' }}>
+                                            <EditIcon />
+                                            {/* TODO: add edit icon functionality, open a modal for editing */}
+                                        </span>
                                     </button>
-                                )}
+                                </div>
                             </td>
                         </tr>
                     ))}

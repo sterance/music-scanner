@@ -306,6 +306,9 @@ body {
     display: flex;
     gap: 0.5rem;
 }
+.directory-actions .button {
+    padding: 0.5rem;
+}
 .error-message {
   background-color: var(--error-color);
   color: white;
@@ -441,6 +444,10 @@ body {
     justify-content: flex-end;
     gap: 0.5rem;
 }
+.modal-footer .button {
+padding: 0.5rem;
+}
+
 .inline-edit-form {
     display: flex;
     align-items: center;
@@ -534,6 +541,12 @@ body {
     max-width: var(--col-actions-width, 60px);
     text-align: center;
     vertical-align: middle;
+}
+
+.button-wrapper {
+  display: flex;
+  flex-direction: row;
+  gap: 0.25rem;
 }
 
 .track-table tbody .col-name {
